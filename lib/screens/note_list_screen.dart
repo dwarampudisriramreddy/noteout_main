@@ -183,7 +183,6 @@ class _NoteListScreenState extends State<NoteListScreen> {
     try {
       final result = await GitHubSyncService.syncAll();
       if (!mounted) return;
-      final count = result['count'] as int;
       final siteErr = result['error'] as String?;
       setState(() {
         _isSyncing = false;
