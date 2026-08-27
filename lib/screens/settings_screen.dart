@@ -21,6 +21,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _lastSyncResult;
   bool _isLoggingIn = false;
   TokenStatus _tokenStatus = TokenStatus.empty;
+  String? _repoSize;
   final _tokenController = TextEditingController();
 
   @override
@@ -30,6 +31,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _tokenStatus = GitHubAuthService.tokenStatus;
     GitHubAuthService.isLoggedInNotifier.addListener(_onAuthChanged);
     GitHubAuthService.tokenStatusNotifier.addListener(_onTokenStatusChanged);
+    if (_isLoggedIn) _loadRepoSize();
+  }
+
+  Future<void> _loadRepoSize() async {
+    final kb = await GitHubSyncService.getRepoSizeKb();
+    if (mounted) {
+      setState(() => _repoSize =
+          kb == null ? 'unknown' : _formatSize(kb));
+    }
+  }
+
+  String _formatSize(int kb) {
+    if (kb < 1024) return '$kb KB';
+    final mb = kb / 1024;
+    if (mb < 1024) return '${mb.toStringAsFixed(1)} MB';
+    final gb = mb / 1024;
+    return '${gb.toStringAsFixed(2)} GB';
   }
 
   @override
@@ -89,6 +107,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       if (ok) {
         SiteStatusMonitor.instance.start();
+        _loadRepoSize();
         _syncNow();
       }
     }
@@ -100,6 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _isLoggedIn = false;
       _lastSyncResult = null;
+      _repoSize = null;
     });
   }
 
@@ -125,6 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         );
         SiteStatusMonitor.instance.refresh();
+        _loadRepoSize();
       }
     } catch (e) {
       if (mounted) {
@@ -373,6 +394,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               else ...[
                 _buildStatusTile(),
                 _buildSiteStatusTile(),
+                _buildInfoTile('storage', _repoSize ?? 'loading…'),
                 _buildActionTile(
                   'view site',
                   _siteStatusSubtitle(),

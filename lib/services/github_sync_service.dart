@@ -648,6 +648,30 @@ class GitHubSyncService {
     return 'https://raw.githubusercontent.com/$repo/$path';
   }
 
+  // Returns the repository's git size in KB via the GitHub API, or null if
+  // it can't be fetched. This is the packed repo size, not raw file bytes.
+  static Future<int?> getRepoSizeKb() async {
+    if (!isConfigured) return null;
+    final token = GitHubAuthService.token;
+    final username = GitHubAuthService.username;
+    final repoName = SettingsService.githubRepo;
+    final repo = '$username/$repoName';
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/repos/$repo'),
+        headers: {
+          'Authorization': 'token $token',
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        return data['size'] as int?;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   static Future<void> _pushEmojis(String token, String repo) async {
     final emojis = SettingsService.allEmojis;
     final content = jsonEncode(emojis);
