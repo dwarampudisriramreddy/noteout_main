@@ -24,7 +24,7 @@ dependencies:
   crypto: ^3.0.3
   docs_gee: ^1.5.0
   image_picker: ^1.2.3
-  file_picker: ^11.0.3
+  file_picker: ^10.3.10
   flutter_image_compress: ^2.5.1
 
 dev_dependencies:

@@ -130,6 +130,7 @@ def page_shell(title, nav_html, body_html, active=''):
     """Wrap content in page template."""
     nav_items = [
         ('index.html', 'notes', 'notes'),
+        ('tags.html', 'tags', 'tags'),
         ('calendar.html', 'calendar', 'calendar'),
     ]
     links = []
@@ -165,7 +166,17 @@ def page_shell(title, nav_html, body_html, active=''):
     .note-card footer{{font-size:0.75em;color:var(--pico-muted-color)}}
     .note-card a{{color:inherit;text-decoration:none}}
     .note-card a:hover{{opacity:0.7}}
-    .tag{{margin-right:0.5em;font-size:0.85em;color:var(--pico-muted-color)}}
+    .tag{{margin-right:0.5em;font-size:0.85em;color:var(--pico-muted-color);text-decoration:none}}
+    .tag:hover{{color:var(--pico-color)}}
+    .tag-count{{font-size:0.75em;opacity:0.6}}
+    .tag-folder{{margin:0.15em 0}}
+    .tag-folder > summary{{list-style:none;cursor:pointer;padding:0}}
+    .tag-folder > summary::-webkit-details-marker{{display:none}}
+    .tag-folder > summary::before{{content:'▸ ';color:var(--pico-muted-color)}}
+    .tag-folder[open] > summary::before{{content:'▾ '}}
+    .tag-folder-link{{font-size:0.9em;color:var(--pico-muted-color);text-decoration:none}}
+    .tag-folder-link:hover{{color:var(--pico-color)}}
+    .tag-children{{margin-left:1em;padding-left:0.75em;border-left:1px solid var(--pico-card-border-color)}}
     .journal-card header{{font-size:0.9em}}
     h2{{font-size:1.1em;margin-top:var(--pico-typography-spacing-top);margin-bottom:var(--pico-spacing);color:var(--pico-muted-color)}}
     .empty{{color:var(--pico-muted-color);text-align:center;margin-top:4em}}
@@ -211,7 +222,10 @@ def build_index(notes):
             tags = meta.get('tags', [])
             if isinstance(tags, str):
                 tags = [tags] if tags else []
-            tags_html = ' '.join(f'<span class="tag">#{t}</span>' for t in tags)
+            tags_html = ' '.join(
+                f'<a href="{tag_href(t)}" class="tag">#{html.escape(t)}</a>'
+                for t in tags
+            )
             excerpt = content[:120].replace('\n', ' ').strip()
             parts.append(f'''<article class="note-card">
   <a href="{s}.html">
@@ -299,7 +313,10 @@ def build_note(meta, content, all_notes):
     tags = meta.get('tags', [])
     if isinstance(tags, str):
         tags = [tags] if tags else []
-    tags_html = ' '.join(f'<span class="tag">#{t}</span>' for t in tags)
+    tags_html = ' '.join(
+        f'<a href="{tag_href(t)}" class="tag">#{html.escape(t)}</a>'
+        for t in tags
+    )
     body_html = simple_md(content)
 
     # wiki links
@@ -321,6 +338,80 @@ def build_note(meta, content, all_notes):
 {links_html}'''
 
     return page_shell(display_title, '', body)
+
+
+def tag_href(tag):
+    """URL for a tag page, using folders for nested tags (tag-a/b.html)."""
+    return 'tag-' + '/'.join(slug(seg) for seg in tag.split('/')) + '.html'
+
+
+def _tag_match(meta, tag):
+    """True if the note has this tag or a descendant (nested) tag."""
+    tags = _meta_tags(meta)
+    return tag in tags or any(t.startswith(tag + '/') for t in tags)
+
+
+def render_tag_tree(root, notes, prefix=''):
+    """Render a nested tag tree as a collapsible folder menu."""
+    items = []
+    for seg in sorted(root.keys()):
+        child = root[seg]
+        full = f'{prefix}{seg}'
+        count = sum(1 for meta, _ in notes if _tag_match(meta, full))
+        if child:
+            inner = render_tag_tree(child, notes, prefix=full + '/')
+            items.append(
+                f'<details class="tag-folder" open><summary>'
+                f'<a href="{tag_href(full)}" class="tag-folder-link">'
+                f'#{html.escape(full)} <span class="tag-count">{count}</span></a>'
+                f'</summary><div class="tag-children">{inner}</div></details>'
+            )
+        else:
+            items.append(
+                f'<div class="tag-leaf"><a href="{tag_href(full)}" class="tag">'
+                f'#{html.escape(full)} <span class="tag-count">{count}</span></a></div>'
+            )
+    return '\n'.join(items)
+
+
+def build_tags_index(tags, notes):
+    """Generate tags.html as a nested folder menu."""
+    root = {}
+    for tag in tags:
+        node = root
+        for seg in tag.split('/'):
+            node = node.setdefault(seg, {})
+    body = render_tag_tree(root, notes) if root else '<p class="empty">no tags yet</p>'
+    return page_shell('tags', '', body, active='tags')
+
+
+def build_tag_page(tag, notes):
+    """Generate tag-<slug>.html listing notes that have this tag (or a child)."""
+    parts = []
+    for meta, content in notes:
+        if not _tag_match(meta, tag):
+            continue
+        title = meta.get('title', 'untitled')
+        link = slug(title)
+        created = meta.get('created', '')[:10]
+        excerpt = content[:120].replace('\n', ' ').strip()
+        parts.append(f'''<article class="note-card">
+  <a href="{link}.html">
+    <header>{html.escape(title)}</header>
+    <p>{html.escape(excerpt)}</p>
+    <footer><time>{created}</time></footer>
+  </a>
+</article>''')
+    body = '\n'.join(parts) if parts else '<p class="empty">no notes with this tag</p>'
+    return page_shell(f'#{tag}', '', body, active='tags')
+
+
+def _meta_tags(meta):
+    """Return the note's tags as a list (handles list or string forms)."""
+    tags = meta.get('tags', [])
+    if isinstance(tags, str):
+        return [tags] if tags else []
+    return list(tags)
 
 
 def build_readme(notes, emojis):
@@ -393,6 +484,10 @@ def main():
 
     # generate pages
     (SITE_DIR / 'index.html').write_text(build_index(notes), encoding='utf-8')
+    (SITE_DIR / 'tags.html').write_text(
+        build_tags_index({t for meta, _ in notes for t in _meta_tags(meta)}, notes),
+        encoding='utf-8',
+    )
     (SITE_DIR / 'calendar.html').write_text(build_calendar(notes, emojis), encoding='utf-8')
     (SITE_DIR / 'README.md').write_text(build_readme(notes, emojis), encoding='utf-8')
 
@@ -403,6 +498,13 @@ def main():
         s = slug(title)
         html_content = build_note(meta, content, notes)
         (SITE_DIR / f'{s}.html').write_text(html_content, encoding='utf-8')
+
+    # per-tag pages
+    all_tags = {t for meta, _ in notes for t in _meta_tags(meta)}
+    for tag in all_tags:
+        page_path = SITE_DIR / tag_href(tag)
+        page_path.parent.mkdir(parents=True, exist_ok=True)
+        page_path.write_text(build_tag_page(tag, notes), encoding='utf-8')
 
     print(f' Built site: {len(notes)} notes -> {SITE_DIR}/')
 

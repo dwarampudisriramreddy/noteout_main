@@ -24,7 +24,8 @@ class Note {
         updatedAt = updatedAt ?? DateTime.now().toUtc();
 
   List<String> get tags {
-    final tagPattern = RegExp(r'(?:^|\s)#([a-zA-Z0-9_]+)');
+    final tagPattern =
+        RegExp(r'(?:^|\s)#([a-zA-Z0-9_]+(?:/[a-zA-Z0-9_]+)*)');
     return tagPattern
         .allMatches(content)
         .map((m) => m.group(1)!)

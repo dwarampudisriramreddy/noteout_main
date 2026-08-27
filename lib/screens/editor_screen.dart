@@ -337,7 +337,8 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   List<String> _parseTags(String content) {
-    final tagPattern = RegExp(r'(?:^|\s)#([a-zA-Z0-9_]+)');
+    final tagPattern =
+        RegExp(r'(?:^|\s)#([a-zA-Z0-9_]+(?:/[a-zA-Z0-9_]+)*)');
     return tagPattern
         .allMatches(content)
         .map((m) => m.group(1)!)
@@ -478,10 +479,17 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _addTag(String rawTag) {
-    final tag = rawTag
+    var tag = rawTag
         .trim()
-        .replaceAll(RegExp(r'\s+'), '_')
-        .replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
+        .replaceAll(RegExp(r'\s+'), '/')
+        .replaceAll(RegExp(r'[^a-zA-Z0-9_/]'), '');
+    while (tag.startsWith('/')) {
+      tag = tag.substring(1);
+    }
+    while (tag.endsWith('/')) {
+      tag = tag.substring(0, tag.length - 1);
+    }
+    tag = tag.replaceAll(RegExp(r'/+'), '/');
     if (tag.isEmpty) return;
     if (_parseTags(_contentController.text).contains(tag)) return;
     final content = _contentController.text;
@@ -653,7 +661,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
   Future<void> _pickDocument() async {
     try {
-      final result = await FilePicker.pickFiles(type: FileType.image);
+      final result = await FilePicker.platform.pickFiles(type: FileType.image);
       if (result == null || result.files.isEmpty) return;
       final f = result.files.first;
       final bytes = f.bytes ??
