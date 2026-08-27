@@ -26,14 +26,34 @@ dependencies:
   image_picker: ^1.2.3
   file_picker: ^10.3.10
   flutter_image_compress: ^2.5.1
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
 
 flutter:
   uses-material-design: true
   assets:
+    - assets/logo.svg
     - assets/site/deploy.yml
     - assets/site/build-site.py
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/logo.png"
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  color_dark: "#0E0E12"
+  image: "assets/splash_light.png"
+  image_dark: "assets/splash_dark.png"
+  android_12:
+    color: "#FFFFFF"
+    color_dark: "#0E0E12"
+    image: "assets/splash_light.png"
+    image_dark: "assets/splash_dark.png"
