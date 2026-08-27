@@ -143,10 +143,10 @@ class GitHubSyncService {
       return;
     }
 
-    await _pushFile(token, repo, '.github/workflows/deploy.yml', workflow,
-        message: 'add github actions workflow');
     await _pushFile(token, repo, 'scripts/build-site.py', buildScript,
         message: 'add site build script');
+    await _pushFile(token, repo, '.github/workflows/deploy.yml', workflow,
+        message: 'add github actions workflow');
 
     await _ensurePages(token, repo);
   }

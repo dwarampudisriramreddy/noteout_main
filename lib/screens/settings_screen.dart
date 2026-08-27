@@ -201,7 +201,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final repo = SettingsService.githubRepo;
     final url = Uri.parse('https://$username.github.io/$repo/');
     if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+      await launchUrl(url, mode: LaunchMode.inAppBrowserView);
     }
   }
 

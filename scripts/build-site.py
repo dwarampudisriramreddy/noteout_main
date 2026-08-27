@@ -29,18 +29,23 @@ def parse_frontmatter(content):
         return {}, content
     raw = content[3:end].strip()
     meta = {}
-    for line in raw.split('\n'):
-        if ':' in line:
-            key, val = line.split(':', 1)
-            key = key.strip()
-            val = val.strip()
-            if val.startswith('[') and val.endswith(']'):
-                val = [v.strip().strip('"').strip("'") for v in val[1:-1].split(',') if v.strip()]
-            elif val.startswith('"') and val.endswith('"'):
-                val = val[1:-1]
-            elif val.startswith("'") and val.endswith("'"):
-                val = val[1:-1]
-            meta[key] = val
+    try:
+        parsed = json.loads(raw)
+        if isinstance(parsed, dict):
+            meta = parsed
+    except Exception:
+        for line in raw.split('\n'):
+            if ':' in line:
+                key, val = line.split(':', 1)
+                key = key.strip()
+                val = val.strip()
+                if val.startswith('[') and val.endswith(']'):
+                    val = [v.strip().strip('"').strip("'") for v in val[1:-1].split(',') if v.strip()]
+                elif val.startswith('"') and val.endswith('"'):
+                    val = val[1:-1]
+                elif val.startswith("'") and val.endswith("'"):
+                    val = val[1:-1]
+                meta[key] = val
     body = content[end + 3:].strip()
     return meta, body
 
@@ -52,6 +57,12 @@ def simple_md(text):
     text = re.sub(r'```(\w*)\n(.*?)```', r'<pre><code>\2</code></pre>', text, flags=re.DOTALL)
     # inline code
     text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
+    # images ![](url)
+    text = re.sub(
+        r'!\[([^\]]*)\]\(([^)]+)\)',
+        r'<img src="\2" alt="\1" class="note-img">',
+        text,
+    )
     # headers
     text = re.sub(r'^#### (.+)$', r'<h4>\1</h4>', text, flags=re.MULTILINE)
     text = re.sub(r'^### (.+)$', r'<h3>\1</h3>', text, flags=re.MULTILINE)
@@ -119,6 +130,7 @@ def page_shell(title, nav_html, body_html, active=''):
     """Wrap content in page template."""
     nav_items = [
         ('index.html', 'notes', 'notes'),
+        ('tags.html', 'tags', 'tags'),
         ('calendar.html', 'calendar', 'calendar'),
     ]
     links = []
@@ -130,50 +142,89 @@ def page_shell(title, nav_html, body_html, active=''):
     nav = ' '.join(links)
 
     return f'''<!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)} — noteout</title>
   <meta name="description" content="noteout — take your thoughts out">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{PICO_CDN}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{{delimiters:[{{left:'$',right:'$',display:false}},{{left:'$$',right:'$$',display:true}}]}})"></script>
   <style>
-    :root{{--pico-font-family:monospace}}
-    body{{max-width:720px;margin:0 auto;padding:var(--pico-typography-spacing-top) var(--pico-spacing)}}
-    h1{{font-size:2em;letter-spacing:-1px;margin-bottom:0}}
-    .tagline{{color:var(--pico-muted-color);font-size:0.85em;margin-bottom:var(--pico-typography-spacing-top)}}
-    nav{{display:flex;gap:var(--pico-spacing);margin-bottom:var(--pico-typography-spacing-top);font-size:0.85em}}
-    nav a{{color:var(--pico-muted-color);text-decoration:none}}
-    nav a:hover{{color:var(--pico-color)}}
-    .note-card{{padding:var(--pico-typography-spacing-inline);margin-bottom:0;border-bottom:1px solid var(--pico-card-border-color)}}
-    .note-card header{{font-weight:600;font-size:1em;margin-bottom:0;padding-bottom:0}}
-    .note-card p{{color:var(--pico-muted-color);font-size:0.85em;margin-bottom:0.25em}}
-    .note-card footer{{font-size:0.75em;color:var(--pico-muted-color)}}
-    .note-card a{{color:inherit;text-decoration:none}}
-    .note-card a:hover{{opacity:0.7}}
-    .tag{{margin-right:0.5em;font-size:0.85em;color:var(--pico-muted-color)}}
-    .journal-card header{{font-size:0.9em}}
-    h2{{font-size:1.1em;margin-top:var(--pico-typography-spacing-top);margin-bottom:var(--pico-spacing);color:var(--pico-muted-color)}}
-    .empty{{color:var(--pico-muted-color);text-align:center;margin-top:4em}}
-    .wiki-link{{color:var(--pico-muted-color);text-decoration:underline;text-decoration-color:var(--pico-card-border-color);text-underline-offset:2px;margin-right:0.5em;font-size:0.9em}}
-    .links{{margin-top:var(--pico-typography-spacing-top);padding-top:var(--pico-spacing);border-top:1px solid var(--pico-card-border-color);font-size:0.85em;color:var(--pico-muted-color)}}
-    .cal-grid{{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:var(--pico-typography-spacing-top)}}
-    .day{{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:0.9em;border-radius:8px;font-variant-numeric:tabular-nums}}
-    .day.empty{{visibility:hidden}}
-    .day.today{{background:var(--pico-color);color:var(--pico-card-background-color);font-weight:600}}
-    .day.has-note{{background:var(--pico-card-border-color)}}
-    .day a{{color:inherit;text-decoration:none;display:flex;align-items:center;justify-content:center;width:100%;height:100%}}
-    .day a:hover{{opacity:0.7}}
-    .month{{margin-bottom:var(--pico-typography-spacing-top)}}
-    .month h3{{font-size:1em;margin-bottom:var(--pico-spacing);color:var(--pico-muted-color)}}
-    footer.site{{margin-top:var(--pico-typography-spacing-top);padding-top:var(--pico-spacing);border-top:1px solid var(--pico-card-border-color);font-size:0.75em;color:var(--pico-muted-color);text-align:center}}
+    :root {{
+      --pico-font-family: 'Inter', system-ui, sans-serif;
+      --pico-font-family-monospace: 'JetBrains Mono', monospace;
+      --pico-primary: #6366f1;
+      --pico-primary-hover: #4f46e5;
+      --pico-border-radius: 12px;
+      --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --card-shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }}
+    body {{ max-width: 800px; margin: 0 auto; padding: 2rem var(--pico-spacing); }}
+    header.main-header {{ display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 3rem; }}
+    h1.site-title {{ font-size: 2.5em; font-weight: 600; letter-spacing: -1px; margin-bottom: 0.2rem; color: var(--pico-primary); }}
+    .tagline {{ color: var(--pico-muted-color); font-size: 1.1em; margin-bottom: 1.5rem; }}
+    nav {{ display: flex; gap: 1rem; justify-content: center; font-size: 1em; background: var(--pico-card-background-color); padding: 0.75rem 1.5rem; border-radius: 99px; box-shadow: var(--card-shadow); margin-bottom: 3rem; }}
+    nav a {{ color: var(--pico-h1-color); text-decoration: none; font-weight: 500; transition: color 0.2s; padding: 0.25rem 0.5rem; border-radius: 6px; }}
+    nav a strong {{ color: var(--pico-primary); font-weight: 600; }}
+    nav a:hover {{ color: var(--pico-primary-hover); }}
+    .note-card {{ background: var(--pico-card-background-color); padding: 1.5rem; margin-bottom: 1.5rem; border-radius: var(--pico-border-radius); box-shadow: var(--card-shadow); transition: transform 0.2s, box-shadow 0.2s; border: 1px solid var(--pico-card-border-color); }}
+    .note-card:hover {{ transform: translateY(-2px); box-shadow: var(--card-shadow-hover); }}
+    .note-card header {{ font-weight: 600; font-size: 1.25em; margin-bottom: 0.5rem; padding-bottom: 0; color: var(--pico-h1-color); }}
+    .note-card p {{ color: var(--pico-muted-color); font-size: 0.95em; margin-bottom: 1rem; line-height: 1.6; }}
+    .note-card footer {{ font-size: 0.85em; color: var(--pico-muted-color); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }}
+    .note-card a {{ color: inherit; text-decoration: none; display: block; }}
+    .tag {{ display: inline-block; padding: 0.2rem 0.6rem; background: var(--pico-primary); color: white !important; border-radius: 99px; font-size: 0.8em; text-decoration: none; transition: opacity 0.2s; font-weight: 500; margin-right: 0.25rem; }}
+    .tag:hover {{ opacity: 0.9; }}
+    .tag-count {{ font-size: 0.8em; opacity: 0.8; margin-left: 0.25rem; }}
+    .tag-folder {{ margin: 0.5rem 0; background: var(--pico-card-background-color); padding: 1rem; border-radius: var(--pico-border-radius); box-shadow: var(--card-shadow); }}
+    .tag-folder > summary {{ list-style: none; cursor: pointer; padding: 0; font-weight: 500; color: var(--pico-h1-color); }}
+    .tag-folder > summary::-webkit-details-marker {{ display: none; }}
+    .tag-folder > summary::before {{ content: '▸ '; color: var(--pico-primary); display: inline-block; width: 1.2em; }}
+    .tag-folder[open] > summary::before {{ content: '▾ '; }}
+    .tag-folder-link {{ color: inherit; text-decoration: none; }}
+    .tag-folder-link:hover {{ color: var(--pico-primary); }}
+    .tag-children {{ margin-left: 1.2em; margin-top: 0.75rem; padding-left: 1rem; border-left: 2px solid var(--pico-primary); opacity: 0.6; }}
+    .tag-leaf {{ margin: 0.5rem 0; }}
+    .journal-card header {{ font-family: var(--pico-font-family-monospace); }}
+    h2 {{ font-size: 1.5em; margin-top: 2rem; margin-bottom: 1rem; color: var(--pico-h1-color); font-weight: 600; }}
+    .empty {{ color: var(--pico-muted-color); text-align: center; margin-top: 4rem; font-size: 1.1em; }}
+    .wiki-link {{ color: var(--pico-primary); text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 4px; font-weight: 500; transition: opacity 0.2s; }}
+    .wiki-link:hover {{ opacity: 0.8; }}
+    .note-img {{ max-width: 100%; height: auto; border-radius: var(--pico-border-radius); margin: 1rem 0; box-shadow: var(--card-shadow); }}
+    .katex-display {{ margin: 1.5rem 0; overflow-x: auto; overflow-y: hidden; }}
+    .links {{ margin-top: 3rem; padding-top: 1.5rem; border-top: 2px dashed var(--pico-card-border-color); font-size: 0.9em; }}
+    .cal-grid {{ display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; margin-bottom: 2rem; }}
+    .day {{ aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 1em; border-radius: var(--pico-border-radius); font-variant-numeric: tabular-nums; background: var(--pico-card-background-color); box-shadow: var(--card-shadow); transition: transform 0.2s; }}
+    .day.empty {{ visibility: hidden; box-shadow: none; }}
+    .day.today {{ background: var(--pico-primary); color: white; font-weight: 600; box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39); border: none; }}
+    .day.has-note {{ border: 2px solid var(--pico-primary); cursor: pointer; }}
+    .day.has-note:hover {{ transform: scale(1.05); }}
+    .day a {{ color: inherit; text-decoration: none; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: inherit; }}
+    .month {{ margin-bottom: 3rem; }}
+    .month h3 {{ font-size: 1.25em; margin-bottom: 1rem; color: var(--pico-h1-color); font-weight: 600; }}
+    footer.site {{ margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--pico-card-border-color); font-size: 0.9em; color: var(--pico-muted-color); text-align: center; }}
+    article > h1 {{ font-size: 2.5em; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.5px; line-height: 1.2; }}
+    .meta {{ font-size: 0.9em; color: var(--pico-muted-color); margin-bottom: 2.5rem; display: flex; gap: 1rem; align-items: center; border-bottom: 1px solid var(--pico-card-border-color); padding-bottom: 1.5rem; }}
+    article pre {{ border-radius: var(--pico-border-radius); padding: 1.25rem; font-family: var(--pico-font-family-monospace); box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05); font-size: 0.9em; }}
+    article blockquote {{ border-left: 4px solid var(--pico-primary); padding-left: 1rem; color: var(--pico-muted-color); font-style: italic; background: var(--pico-card-background-color); padding: 1rem; border-radius: 0 var(--pico-border-radius) var(--pico-border-radius) 0; }}
+    article p {{ line-height: 1.8; font-size: 1.05em; }}
   </style>
 </head>
 <body>
-  <h1>noteout</h1>
-  <p class="tagline">take your thoughts out</p>
-  <nav>{nav}</nav>
-  {body_html}
+  <header class="main-header">
+    <h1 class="site-title">noteout</h1>
+    <p class="tagline">take your thoughts out</p>
+    <nav>{nav}</nav>
+  </header>
+  <main>
+    {body_html}
+  </main>
   <footer class="site">noteout &mdash; take your thoughts out</footer>
 </body>
 </html>'''
@@ -195,7 +246,10 @@ def build_index(notes):
             tags = meta.get('tags', [])
             if isinstance(tags, str):
                 tags = [tags] if tags else []
-            tags_html = ' '.join(f'<span class="tag">#{t}</span>' for t in tags)
+            tags_html = ' '.join(
+                f'<a href="{tag_href(t)}" class="tag">#{html.escape(t)}</a>'
+                for t in tags
+            )
             excerpt = content[:120].replace('\n', ' ').strip()
             parts.append(f'''<article class="note-card">
   <a href="{s}.html">
@@ -283,7 +337,10 @@ def build_note(meta, content, all_notes):
     tags = meta.get('tags', [])
     if isinstance(tags, str):
         tags = [tags] if tags else []
-    tags_html = ' '.join(f'<span class="tag">#{t}</span>' for t in tags)
+    tags_html = ' '.join(
+        f'<a href="{tag_href(t)}" class="tag">#{html.escape(t)}</a>'
+        for t in tags
+    )
     body_html = simple_md(content)
 
     # wiki links
@@ -305,6 +362,80 @@ def build_note(meta, content, all_notes):
 {links_html}'''
 
     return page_shell(display_title, '', body)
+
+
+def tag_href(tag):
+    """URL for a tag page, using folders for nested tags (tag-a/b.html)."""
+    return 'tag-' + '/'.join(slug(seg) for seg in tag.split('/')) + '.html'
+
+
+def _tag_match(meta, tag):
+    """True if the note has this tag or a descendant (nested) tag."""
+    tags = _meta_tags(meta)
+    return tag in tags or any(t.startswith(tag + '/') for t in tags)
+
+
+def render_tag_tree(root, notes, prefix=''):
+    """Render a nested tag tree as a collapsible folder menu."""
+    items = []
+    for seg in sorted(root.keys()):
+        child = root[seg]
+        full = f'{prefix}{seg}'
+        count = sum(1 for meta, _ in notes if _tag_match(meta, full))
+        if child:
+            inner = render_tag_tree(child, notes, prefix=full + '/')
+            items.append(
+                f'<details class="tag-folder" open><summary>'
+                f'<a href="{tag_href(full)}" class="tag-folder-link">'
+                f'#{html.escape(full)} <span class="tag-count">{count}</span></a>'
+                f'</summary><div class="tag-children">{inner}</div></details>'
+            )
+        else:
+            items.append(
+                f'<div class="tag-leaf"><a href="{tag_href(full)}" class="tag">'
+                f'#{html.escape(full)} <span class="tag-count">{count}</span></a></div>'
+            )
+    return '\n'.join(items)
+
+
+def build_tags_index(tags, notes):
+    """Generate tags.html as a nested folder menu."""
+    root = {}
+    for tag in tags:
+        node = root
+        for seg in tag.split('/'):
+            node = node.setdefault(seg, {})
+    body = render_tag_tree(root, notes) if root else '<p class="empty">no tags yet</p>'
+    return page_shell('tags', '', body, active='tags')
+
+
+def build_tag_page(tag, notes):
+    """Generate tag-<slug>.html listing notes that have this tag (or a child)."""
+    parts = []
+    for meta, content in notes:
+        if not _tag_match(meta, tag):
+            continue
+        title = meta.get('title', 'untitled')
+        link = slug(title)
+        created = meta.get('created', '')[:10]
+        excerpt = content[:120].replace('\n', ' ').strip()
+        parts.append(f'''<article class="note-card">
+  <a href="{link}.html">
+    <header>{html.escape(title)}</header>
+    <p>{html.escape(excerpt)}</p>
+    <footer><time>{created}</time></footer>
+  </a>
+</article>''')
+    body = '\n'.join(parts) if parts else '<p class="empty">no notes with this tag</p>'
+    return page_shell(f'#{tag}', '', body, active='tags')
+
+
+def _meta_tags(meta):
+    """Return the note's tags as a list (handles list or string forms)."""
+    tags = meta.get('tags', [])
+    if isinstance(tags, str):
+        return [tags] if tags else []
+    return list(tags)
 
 
 def build_readme(notes, emojis):
@@ -377,6 +508,10 @@ def main():
 
     # generate pages
     (SITE_DIR / 'index.html').write_text(build_index(notes), encoding='utf-8')
+    (SITE_DIR / 'tags.html').write_text(
+        build_tags_index({t for meta, _ in notes for t in _meta_tags(meta)}, notes),
+        encoding='utf-8',
+    )
     (SITE_DIR / 'calendar.html').write_text(build_calendar(notes, emojis), encoding='utf-8')
     (SITE_DIR / 'README.md').write_text(build_readme(notes, emojis), encoding='utf-8')
 
@@ -387,6 +522,13 @@ def main():
         s = slug(title)
         html_content = build_note(meta, content, notes)
         (SITE_DIR / f'{s}.html').write_text(html_content, encoding='utf-8')
+
+    # per-tag pages
+    all_tags = {t for meta, _ in notes for t in _meta_tags(meta)}
+    for tag in all_tags:
+        page_path = SITE_DIR / tag_href(tag)
+        page_path.parent.mkdir(parents=True, exist_ok=True)
+        page_path.write_text(build_tag_page(tag, notes), encoding='utf-8')
 
     print(f' Built site: {len(notes)} notes -> {SITE_DIR}/')
 

@@ -276,77 +276,7 @@ class _NoteListScreenState extends State<NoteListScreen> {
             tooltip: 'sync',
           ),
           _buildThemeToggle(),
-          ValueListenableBuilder<SiteBuildStatus>(
-            valueListenable: SiteStatusMonitor.instance.status,
-            builder: (context, status, _) {
-              if (status == SiteBuildStatus.unknown) {
-                return const SizedBox.shrink();
-              }
-              final (Color color, String label, IconData? icon) = switch (status) {
-                SiteBuildStatus.building => (
-                    Colors.amber,
-                    'building',
-                    null,
-                  ),
-                SiteBuildStatus.live => (
-                    Colors.green,
-                    'live',
-                    null,
-                  ),
-                SiteBuildStatus.error => (
-                    Colors.red,
-                    'build failed',
-                    null,
-                  ),
-                SiteBuildStatus.unknown => (Colors.grey, 'unknown', null),
-              };
-              return Center(
-                child: Tooltip(
-                  message: label,
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 4),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      border: Border.all(color: color.withValues(alpha: 0.5)),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 7,
-                          height: 7,
-                          child: status == SiteBuildStatus.building
-                              ? const CircularProgressIndicator(
-                                  strokeWidth: 1.5,
-                                  color: Colors.amber,
-                                )
-                              : DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: color,
-                                  ),
-                                ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                            color: color,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
+
           IconButton(
             icon: const Icon(Icons.sort, size: 20),
             onPressed: _showSortMenu,

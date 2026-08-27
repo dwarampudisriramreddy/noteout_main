@@ -255,8 +255,8 @@ class _JournalScreenState extends State<JournalScreen> {
                       shape: BoxShape.circle,
                       color: Colors.blue,
                     ),
-                  )
-                else if (emoji.isNotEmpty)
+                  ),
+                if (emoji.isNotEmpty)
                   Text(
                     emoji,
                     style: const TextStyle(fontSize: 14),
