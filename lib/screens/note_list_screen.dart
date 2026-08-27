@@ -23,7 +23,6 @@ class _NoteListScreenState extends State<NoteListScreen> {
   List<String> _allTags = [];
   final _searchController = TextEditingController();
   bool _isSyncing = false;
-  String? _lastSyncMessage;
   _SortField _sortField = _SortField.modified;
   bool _sortAscending = false;
 
@@ -180,7 +179,6 @@ class _NoteListScreenState extends State<NoteListScreen> {
     if (_isSyncing || !GitHubSyncService.isConfigured) return;
     setState(() {
       _isSyncing = true;
-      _lastSyncMessage = null;
     });
     try {
       final result = await GitHubSyncService.syncAll();
@@ -189,9 +187,6 @@ class _NoteListScreenState extends State<NoteListScreen> {
       final siteErr = result['error'] as String?;
       setState(() {
         _isSyncing = false;
-        _lastSyncMessage = siteErr != null
-            ? 'saved $count notes · site pending'
-            : 'saved · $count note${count == 1 ? '' : 's'} synced';
       });
       if (siteErr != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -207,7 +202,6 @@ class _NoteListScreenState extends State<NoteListScreen> {
       if (!mounted) return;
       setState(() {
         _isSyncing = false;
-        _lastSyncMessage = 'sync failed';
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -382,7 +376,6 @@ class _NoteListScreenState extends State<NoteListScreen> {
       ),
       body: Column(
         children: [
-          _buildSyncStatusBar(),
           _buildSearchBar(),
           if (_allTags.isNotEmpty) _buildTagBar(),
           Expanded(
@@ -405,46 +398,6 @@ class _NoteListScreenState extends State<NoteListScreen> {
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         elevation: 1,
         child: const Icon(Icons.add, size: 20),
-      ),
-    );
-  }
-
-  Widget _buildSyncStatusBar() {
-    final isError = _lastSyncMessage == 'sync failed';
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-      child: Row(
-        children: [
-          if (_isSyncing)
-            SizedBox(
-              width: 10,
-              height: 10,
-              child: CircularProgressIndicator(
-                  strokeWidth: 1.5, color: context.nText),
-            )
-          else
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isError ? Colors.red : const Color(0xFF4CAF50),
-              ),
-            ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              _isSyncing
-                  ? 'syncing…'
-                  : (_lastSyncMessage ?? 'saved'),
-              style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 10,
-                color: isError ? Colors.red[700] : context.nMuted,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

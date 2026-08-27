@@ -4,6 +4,7 @@ class Note {
   final String id;
   String title;
   String content;
+  final List<String> tags;
   final DateTime createdAt;
   DateTime updatedAt;
   String? githubSha;
@@ -14,16 +15,18 @@ class Note {
     String? id,
     this.title = '',
     this.content = '',
+    List<String>? tags,
     DateTime? createdAt,
     DateTime? updatedAt,
     this.githubSha,
     this.githubModifiedAt,
     this.isDeleted = false,
   })  : id = id ?? const Uuid().v4(),
+        tags = tags ?? const [],
         createdAt = createdAt ?? DateTime.now().toUtc(),
         updatedAt = updatedAt ?? DateTime.now().toUtc();
 
-  List<String> get tags {
+  static List<String> _tagsFromContent(String content) {
     final tagPattern =
         RegExp(r'(?:^|\s)#([a-zA-Z0-9_]+(?:/[a-zA-Z0-9_]+)*)');
     return tagPattern
@@ -69,6 +72,7 @@ class Note {
       'id': id,
       'title': title,
       'content': content,
+      'tags': tags,
       'created_at': createdAt.millisecondsSinceEpoch,
       'updated_at': updatedAt.millisecondsSinceEpoch,
       'github_sha': githubSha,
@@ -78,10 +82,18 @@ class Note {
   }
 
   factory Note.fromMap(Map<String, dynamic> map) {
+    List<String> tags;
+    final raw = map['tags'];
+    if (raw is List) {
+      tags = List<String>.from(raw.map((e) => e.toString()));
+    } else {
+      tags = _tagsFromContent(map['content'] as String? ?? '');
+    }
     return Note(
       id: map['id'] as String,
       title: map['title'] as String? ?? '',
       content: map['content'] as String? ?? '',
+      tags: tags,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at'] as int),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updated_at'] as int),
       githubSha: map['github_sha'] as String?,
@@ -95,6 +107,7 @@ class Note {
   Note copyWith({
     String? title,
     String? content,
+    List<String>? tags,
     DateTime? updatedAt,
     String? githubSha,
     DateTime? githubModifiedAt,
@@ -104,6 +117,7 @@ class Note {
       id: id,
       title: title ?? this.title,
       content: content ?? this.content,
+      tags: tags ?? this.tags,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now().toUtc(),
       githubSha: githubSha ?? this.githubSha,

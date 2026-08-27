@@ -99,22 +99,29 @@ class _EditorScreenState extends State<EditorScreen> {
     setState(() {});
   }
 
+  String _stripAllTagLines(String text) {
+    return text
+        .replaceAllMapped(
+          RegExp(r'^\s*#[a-zA-Z0-9_]+(?:/[a-zA-Z0-9_]+)*\s*$',
+              multiLine: true),
+          (_) => '',
+        )
+        .trim();
+  }
+
   Future<void> _saveNote() async {
     if (_note == null) return;
-    var content = _contentController.text;
+    // Tags live in note metadata, so keep them out of the body text.
+    var content = _stripAllTagLines(_contentController.text);
     final title = _titleController.text.trim();
     final isJournal = title.toLowerCase().startsWith('journal:');
     final requiredTag = isJournal ? 'journal' : 'note';
-    final tagPresent = RegExp(r'(?:^|\s)#' +
-            RegExp.escape(requiredTag) +
-            r'\b')
-        .hasMatch(content);
-    if (!tagPresent) {
-      content = '#$requiredTag\n$content';
-    }
+    final tags = [..._note!.tags];
+    if (!tags.contains(requiredTag)) tags.add(requiredTag);
     final updated = _note!.copyWith(
       title: title,
       content: content,
+      tags: tags,
       updatedAt: DateTime.now().toUtc(),
     );
     await StorageService.saveNote(updated);
@@ -262,7 +269,7 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   Widget _buildEditor() {
-    final tags = _parseTags(_contentController.text);
+    final tags = _note?.tags ?? const [];
     return SingleChildScrollView(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -280,14 +287,14 @@ class _EditorScreenState extends State<EditorScreen> {
               color: context.nText,
               height: 1.3,
             ),
-            decoration: const InputDecoration(
-              hintText: 'title',
-              hintStyle: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: Colors.black12,
-              ),
+            decoration: InputDecoration(
+                hintText: 'title',
+                hintStyle: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: context.nFaint,
+                ),
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
@@ -315,13 +322,13 @@ class _EditorScreenState extends State<EditorScreen> {
                 color: context.nText,
                 height: 1.7,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText:
                     'start writing...\n\nuse [[link]] for wiki links\n#tag for tags\n\$x^2\$ for LaTeX',
                 hintStyle: TextStyle(
                   fontFamily: 'monospace',
                   fontSize: 13,
-                  color: Colors.black12,
+                  color: context.nFaint,
                   height: 1.7,
                 ),
                 border: InputBorder.none,
@@ -334,17 +341,6 @@ class _EditorScreenState extends State<EditorScreen> {
         ],
       ),
     );
-  }
-
-  List<String> _parseTags(String content) {
-    final tagPattern =
-        RegExp(r'(?:^|\s)#([a-zA-Z0-9_]+(?:/[a-zA-Z0-9_]+)*)');
-    return tagPattern
-        .allMatches(content)
-        .map((m) => m.group(1)!)
-        .toSet()
-        .toList()
-      ..sort();
   }
 
   Widget _buildTagsRow(List<String> tags) {
@@ -416,21 +412,11 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _removeTag(String tag) {
-    final content = _contentController.text;
-    final pattern = RegExp(
-        r'(^|\s)#${RegExp.escape(tag)}(?=\s|$|[^a-zA-Z0-9_])');
-    final newContent = content.replaceAllMapped(pattern, (m) {
-      final lead = m.group(1) ?? '';
-      return lead == '\n' ? '' : lead;
-    }).replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
-    _contentController.value = TextEditingValue(
-      text: newContent,
-      selection: TextSelection.fromPosition(
-        TextPosition(offset: newContent.length),
-      ),
-    );
-    _contentFocus.requestFocus();
-    setState(() {});
+    setState(() {
+      _note = _note!.copyWith(
+        tags: _note!.tags.where((t) => t != tag).toList(),
+      );
+    });
   }
 
   Future<void> _showAddTagDialog() async {
@@ -491,17 +477,11 @@ class _EditorScreenState extends State<EditorScreen> {
     }
     tag = tag.replaceAll(RegExp(r'/+'), '/');
     if (tag.isEmpty) return;
-    if (_parseTags(_contentController.text).contains(tag)) return;
-    final content = _contentController.text;
-    final newContent = content.isEmpty ? '#$tag' : '$content\n#$tag';
-    _contentController.value = TextEditingValue(
-      text: newContent,
-      selection: TextSelection.fromPosition(
-        TextPosition(offset: newContent.length),
-      ),
-    );
-    _contentFocus.requestFocus();
-    setState(() {});
+    final current = _note?.tags ?? const [];
+    if (current.contains(tag)) return;
+    setState(() {
+      _note = _note!.copyWith(tags: [...current, tag]);
+    });
   }
 
   Widget _buildPreview() {
