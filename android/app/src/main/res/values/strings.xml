@@ -1,0 +1,4 @@
+<resources>
+    <!-- Google Sign-In: Web client ID from Google Cloud Console (OAuth 2.0 Client ID for Web application). -->
+    <string name="default_web_client_id">943620360661-m2khc9v4dkc8fuce93n53hfcvuuulolb.apps.googleusercontent.com</string>
+</resources>

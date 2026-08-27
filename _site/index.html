@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>noteout — noteout</title>
+  <meta name="description" content="noteout — take your thoughts out">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <style>
+    :root{--pico-font-family:monospace}
+    body{max-width:720px;margin:0 auto;padding:var(--pico-typography-spacing-top) var(--pico-spacing)}
+    h1{font-size:2em;letter-spacing:-1px;margin-bottom:0}
+    .tagline{color:var(--pico-muted-color);font-size:0.85em;margin-bottom:var(--pico-typography-spacing-top)}
+    nav{display:flex;gap:var(--pico-spacing);margin-bottom:var(--pico-typography-spacing-top);font-size:0.85em}
+    nav a{color:var(--pico-muted-color);text-decoration:none}
+    nav a:hover{color:var(--pico-color)}
+    .note-card{padding:var(--pico-typography-spacing-inline);margin-bottom:0;border-bottom:1px solid var(--pico-card-border-color)}
+    .note-card header{font-weight:600;font-size:1em;margin-bottom:0;padding-bottom:0}
+    .note-card p{color:var(--pico-muted-color);font-size:0.85em;margin-bottom:0.25em}
+    .note-card footer{font-size:0.75em;color:var(--pico-muted-color)}
+    .note-card a{color:inherit;text-decoration:none}
+    .note-card a:hover{opacity:0.7}
+    .tag{margin-right:0.5em;font-size:0.85em;color:var(--pico-muted-color)}
+    .journal-card header{font-size:0.9em}
+    h2{font-size:1.1em;margin-top:var(--pico-typography-spacing-top);margin-bottom:var(--pico-spacing);color:var(--pico-muted-color)}
+    .empty{color:var(--pico-muted-color);text-align:center;margin-top:4em}
+    .wiki-link{color:var(--pico-muted-color);text-decoration:underline;text-decoration-color:var(--pico-card-border-color);text-underline-offset:2px;margin-right:0.5em;font-size:0.9em}
+    .links{margin-top:var(--pico-typography-spacing-top);padding-top:var(--pico-spacing);border-top:1px solid var(--pico-card-border-color);font-size:0.85em;color:var(--pico-muted-color)}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:var(--pico-typography-spacing-top)}
+    .day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:0.9em;border-radius:8px;font-variant-numeric:tabular-nums}
+    .day.empty{visibility:hidden}
+    .day.today{background:var(--pico-color);color:var(--pico-card-background-color);font-weight:600}
+    .day.has-note{background:var(--pico-card-border-color)}
+    .day a{color:inherit;text-decoration:none;display:flex;align-items:center;justify-content:center;width:100%;height:100%}
+    .day a:hover{opacity:0.7}
+    .month{margin-bottom:var(--pico-typography-spacing-top)}
+    .month h3{font-size:1em;margin-bottom:var(--pico-spacing);color:var(--pico-muted-color)}
+    footer.site{margin-top:var(--pico-typography-spacing-top);padding-top:var(--pico-spacing);border-top:1px solid var(--pico-card-border-color);font-size:0.75em;color:var(--pico-muted-color);text-align:center}
+  </style>
+</head>
+<body>
+  <h1>noteout</h1>
+  <p class="tagline">take your thoughts out</p>
+  <nav><a href="index.html"><strong>notes</strong></a> <a href="calendar.html">calendar</a></nav>
+  <p class="empty">no notes yet</p>
+  <footer class="site">noteout &mdash; take your thoughts out</footer>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="108" fill="#111111"/>
+
+  <!-- Bold filled page -->
+  <rect x="140" y="108" width="188" height="232" rx="18" fill="#ffffff"/>
+
+  <!-- Note lines -->
+  <rect x="172" y="192" width="100" height="6" rx="3" fill="#111111"/>
+  <rect x="172" y="216" width="80" height="6" rx="3" fill="#111111"/>
+  <rect x="172" y="240" width="92" height="6" rx="3" fill="#111111"/>
+  <rect x="172" y="264" width="60" height="6" rx="3" fill="#111111"/>
+</svg>
