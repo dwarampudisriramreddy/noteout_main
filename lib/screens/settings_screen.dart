@@ -95,7 +95,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         msg = 'token expired — generate a new one with "no expiration"';
         bg = Colors.red;
       } else {
-        msg = 'invalid token';
+        msg = 'invalid token: "$token"';
         bg = Colors.red;
       }
       ScaffoldMessenger.of(context).showSnackBar(

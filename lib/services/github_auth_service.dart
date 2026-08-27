@@ -58,7 +58,8 @@ class GitHubAuthService {
         }
       }
       return TokenStatus.invalid;
-    } catch (_) {
+    } catch (e) {
+      print('GitHub API error: $e');
       return TokenStatus.invalid;
     }
   }

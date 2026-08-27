@@ -67,7 +67,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           content: Text(
             status == TokenStatus.expired
                 ? 'token expired — generate a new one with "no expiration"'
-                : 'invalid token — use a classic PAT with ALL scopes',
+                : 'invalid token: "$token"',
             style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
           ),
           backgroundColor: Colors.red,
