@@ -49,7 +49,7 @@ class SettingsService {
   static String get githubToken => _box.get('githubToken') ?? '';
 
   static set githubToken(String value) {
-    _box.put('githubToken', value);
+    _box.put('githubToken', value.trim());
   }
 
   static String get githubUsername => _box.get('githubUsername') ?? '';

@@ -38,7 +38,7 @@ class GitHubAuthService {
       final response = await http.get(
         Uri.parse('$_apiBase/user'),
         headers: {
-          'Authorization': 'token $token',
+          'Authorization': 'Bearer ${token.trim()}',
           'Accept': 'application/vnd.github.v3+json',
         },
       );
@@ -64,7 +64,7 @@ class GitHubAuthService {
   }
 
   static Future<bool> signIn(String pat) async {
-    SettingsService.githubToken = pat;
+    SettingsService.githubToken = pat.trim();
     final status = await validateToken();
     if (status == TokenStatus.valid) {
       isLoggedInNotifier.value = true;
