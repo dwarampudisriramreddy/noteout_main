@@ -582,7 +582,6 @@ def page_shell(title, body_html, active, tree_html, prefix=''):
 
   <div class="layout">
     <aside class="sidebar">
-      {brand}
       <nav class="snav">{snav_active}</nav>
       <div class="slabel">Categories</div>
       <div class="ttree">{tree_html}
@@ -858,7 +857,6 @@ def _build_index_personal(notes, tree_html, cfg, emojis):
     all_tags = {t for m, _ in notes for t in _meta_tags(m) if t not in STRUCTURAL_TAGS}
 
     body = [
-        _hero_html(cfg),
         _stats_html(regular, journal, len(all_tags)),
     ]
     if cfg.get('show_calendar', True):
@@ -882,7 +880,6 @@ def _build_index_docs(notes, tree_html, cfg):
     all_tags = {t for m, _ in notes for t in _meta_tags(m) if t not in STRUCTURAL_TAGS}
 
     body = [
-        _hero_html(cfg),
         _stats_html(regular, journal, len(all_tags)),
         '<div class="search-wrap">',
         f'<div class="search">{ICONS["search"]}<input class="searchbox" type="search" placeholder="Search notes…" aria-label="Search notes"></div>',
