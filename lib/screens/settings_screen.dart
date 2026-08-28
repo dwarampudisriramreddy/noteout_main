@@ -402,14 +402,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 )
               else ...[
                 _buildStatusTile(),
-                _buildSiteStatusTile(),
                 _buildInfoTile('storage', _repoSize ?? 'loading…'),
-                _buildActionTile(
-                  'view site',
-                  _siteStatusSubtitle(),
-                  _openLiveSite,
-                  false,
-                ),
                 _buildActionTile(
                   'sync now',
                   _lastSyncResult ?? 'push/pull all notes',
@@ -440,6 +433,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildSection(
             'site',
             [
+              if (_isLoggedIn) _buildSiteStatusTile(),
+              if (_isLoggedIn)
+                _buildActionTile(
+                  'view site',
+                  _siteStatusSubtitle(),
+                  _openLiveSite,
+                  false,
+                ),
               _buildActionTile(
                 'site settings',
                 'site layout, colors & home page',

@@ -670,7 +670,6 @@ def card_html(meta, content, prefix, exclude=(), dd=False):
     cls = 'card dd' if dd else 'card'
     return f'''<a class="{cls}" href="{prefix}{slug(title)}.html" data-search="{html.escape(search_text)}">
   <h3>{html.escape(title)}</h3>
-  <p class="ex">{html.escape(excerpt)}</p>
   <div class="meta"><time>{created}</time>{others}</div>
 </a>'''
 

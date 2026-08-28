@@ -23,6 +23,8 @@ class EditorScreen extends StatefulWidget {
 
 class _EditorScreenState extends State<EditorScreen> {
   Note? _note;
+  List<Note> _allNotes = [];
+  String? _linkQuery;
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   final _titleFocus = FocusNode();
@@ -36,6 +38,12 @@ class _EditorScreenState extends State<EditorScreen> {
   void initState() {
     super.initState();
     _loadNote();
+    _loadAllNotes();
+  }
+
+  Future<void> _loadAllNotes() async {
+    _allNotes = await StorageService.getAllNotes();
+    if (mounted) setState(() {});
   }
 
   @override
@@ -220,6 +228,7 @@ class _EditorScreenState extends State<EditorScreen> {
             Expanded(
               child: _isPreview ? _buildPreview() : _buildEditor(),
             ),
+            if (_linkQuery != null) _buildLinkSuggestions(),
             if (!_isPreview) _buildToolbar(),
           ],
         ),
@@ -270,6 +279,88 @@ class _EditorScreenState extends State<EditorScreen> {
                 : context.nMuted,
           ),
         ),
+      ),
+    );
+  }
+
+  void _checkLinkAutocomplete(String text) {
+    final selection = _contentController.selection;
+    if (!selection.isValid || selection.baseOffset != selection.extentOffset) {
+      _linkQuery = null;
+      return;
+    }
+    
+    final cursor = selection.baseOffset;
+    if (cursor < 0 || cursor > text.length) {
+      _linkQuery = null;
+      return;
+    }
+    
+    final textBefore = text.substring(0, cursor);
+    final lastOpen = textBefore.lastIndexOf('[[');
+    final lastClose = textBefore.lastIndexOf(']]');
+    
+    if (lastOpen != -1 && lastOpen > lastClose) {
+      _linkQuery = textBefore.substring(lastOpen + 2);
+    } else {
+      _linkQuery = null;
+    }
+  }
+
+  Widget _buildLinkSuggestions() {
+    if (_linkQuery == null) return const SizedBox.shrink();
+    
+    final query = _linkQuery!.toLowerCase();
+    final matches = _allNotes
+        .where((n) => n.id != _note?.id)
+        .where((n) => n.title.toLowerCase().contains(query))
+        .take(5)
+        .toList();
+        
+    if (matches.isEmpty) return const SizedBox.shrink();
+    
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 150),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        border: Border(top: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.1))),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          )
+        ]
+      ),
+      child: ListView.builder(
+        shrinkWrap: true,
+        itemCount: matches.length,
+        itemBuilder: (context, index) {
+          final note = matches[index];
+          return ListTile(
+            dense: true,
+            leading: Icon(Icons.article_outlined, size: 16, color: Theme.of(context).colorScheme.primary),
+            title: Text(note.title, style: TextStyle(fontFamily: 'monospace', fontSize: 13, color: Theme.of(context).textTheme.bodyMedium?.color)),
+            onTap: () {
+              final text = _contentController.text;
+              final selection = _contentController.selection;
+              final cursor = selection.baseOffset;
+              final textBefore = text.substring(0, cursor);
+              final lastOpen = textBefore.lastIndexOf('[[');
+              
+              final newText = text.substring(0, lastOpen + 2) + note.title + ']]' + text.substring(cursor);
+              
+              _contentController.value = TextEditingValue(
+                text: newText,
+                selection: TextSelection.collapsed(offset: lastOpen + 2 + note.title.length + 2),
+              );
+              
+              setState(() {
+                _linkQuery = null;
+              });
+            },
+          );
+        },
       ),
     );
   }
@@ -329,8 +420,37 @@ class _EditorScreenState extends State<EditorScreen> {
                 height: 1.7,
               ),
               decoration: InputDecoration(
-                hintText:
-                    'start writing...\n\nuse [[link]] for wiki links\n#tag for tags\n\$x^2\$ for LaTeX',
+                hintText: '''start writing...
+
+# Heading 1
+## Heading 2
+### Heading 3
+
+**Bold** and *Italics*
+> Blockquote
+
+- Bullet list
+1. Numbered list
+
+---
+
+`inline code`
+
+```
+code block
+```
+
+| Table | Header |
+|-------|--------|
+| Cell  | Cell   |
+
+[[wiki link]] to connect notes
+#tag for categorization
+
+\$E=mc^2\$ for inline math
+\$\$
+\\int_a^b x^2 dx
+\$\$ for block math''',
                 hintStyle: TextStyle(
                   fontFamily: 'monospace',
                   fontSize: 13,
@@ -340,7 +460,10 @@ class _EditorScreenState extends State<EditorScreen> {
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
               ),
-              onChanged: (_) => setState(() {}),
+              onChanged: (text) {
+                _checkLinkAutocomplete(text);
+                setState(() {});
+              },
             ),
           ),
           const SizedBox(height: 100),
