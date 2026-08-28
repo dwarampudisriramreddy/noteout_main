@@ -595,7 +595,7 @@ def page_shell(title, body_html, active, tree_html, prefix=''):
 
   <footer class="site">
     <div>© {datetime.now().year} <b>{html.escape(cfg['name'])}</b> — notes &amp; thoughts</div>
-    <div>made with noteout</div>
+    <div>made with noteout - get your thoughts out</div>
   </footer>
   <script>{JS}</script>
 </body>
