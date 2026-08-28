@@ -253,7 +253,7 @@ class _NoteListScreenState extends State<NoteListScreen> {
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: Text(
-                SettingsService.userName.isEmpty ? 'get your thoughts out' : 'get your thoughts out, ${SettingsService.userName}',
+                'get your thoughts out',
                 style: const TextStyle(
                   fontFamily: 'monospace',
                   fontSize: 8.5,
