@@ -78,7 +78,7 @@ CSS = """
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;font-family:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column;min-height:100vh;margin:0;font-family:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
 img{max-width:100%}
 a{color:var(--primary);text-decoration:none}
 svg{flex:none}
@@ -95,7 +95,7 @@ svg{flex:none}
 .topnav a:hover{color:var(--text);background:var(--surface-2)}
 .topnav a.active{color:var(--primary);background:var(--primary-soft)}
 
-.layout{display:grid;grid-template-columns:280px minmax(0,1fr);max-width:1300px;margin:0 auto}
+.layout{flex:1;width:100%;display:grid;grid-template-columns:280px minmax(0,1fr);max-width:1300px;margin:0 auto}
 .sidebar{position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:18px 12px 40px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
 .content{padding:42px 46px 70px;min-width:0}
 @media(max-width:920px){
@@ -241,7 +241,7 @@ article li{margin:.35em 0}
 .day.has-note .dn{color:var(--primary);font-weight:600}
 .day.has-note:hover{border-color:var(--primary);box-shadow:var(--shadow)}
 
-footer.site{max-width:1300px;margin:0 auto;border-top:1px solid var(--line);padding:22px 30px 40px;color:var(--muted);font-size:.84em;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+footer.site{width:100%;box-sizing:border-box;max-width:1300px;margin:0 auto;border-top:1px solid var(--line);padding:22px 30px 30px;color:var(--muted);font-size:.78em;display:flex;justify-content:center;text-align:center;}
 footer.site b{color:var(--text)}
 .scrim{display:none;position:fixed;inset:0;background:rgba(8,10,20,.45);z-index:29}
 body.nav-open .scrim{display:block}
@@ -529,6 +529,7 @@ def page_shell(title, body_html, active, tree_html, prefix=''):
     nav_items = [
         ('index.html', 'home', ICONS['home'], 'Home'),
         ('notes.html', 'notes', ICONS['notes'], 'Notes'),
+        ('journals.html', 'journals', ICONS['calendar'], 'Journals'),
         ('tags.html', 'tags', ICONS['tags'], 'Tags'),
             ]
 
@@ -593,8 +594,7 @@ def page_shell(title, body_html, active, tree_html, prefix=''):
   </div>
 
   <footer class="site">
-    <div>© {datetime.now().year} <b>{html.escape(cfg['name'])}</b> — notes &amp; thoughts</div>
-    <div>made with noteout - get your thoughts out</div>
+    <div>© {datetime.now().year} <b>{html.escape(cfg['name'])}</b> - made with noteout</div>
   </footer>
   <script>{JS}</script>
 </body>
@@ -893,12 +893,30 @@ def _build_index_docs(notes, tree_html, cfg):
     return page_shell('Home', '\n'.join(body), 'home', tree_html)
 
 
+
+def build_journals_page(notes, tree_html, emojis):
+    journal = [(m, c) for m, c in notes if m.get('title', '').startswith('journal:')]
+    journal.sort(key=lambda x: x[0].get('title', ''), reverse=True)
+    
+    body = [
+        '<h1 class="doctitle">Journals</h1>',
+        _journal_section(notes, emojis),
+        '<div class="search-wrap" style="margin-top: 30px">',
+        f'<div class="search">{ICONS["search"]}<input class="searchbox" type="search" placeholder="Search journals…" aria-label="Search journals"></div>',
+    ]
+    if journal:
+        cards = ''.join(card_html(m, c, '', dd=True) for m, c in journal)
+        body.append(f'<div class="group"><div class="notes dd">{cards}</div></div>')
+    else:
+        body.append('<p class="empty">no journals yet</p>')
+    body.append('<p class="empty-search">no matching notes</p></div>')
+    return page_shell('Journals', '\n'.join(body), 'journals', tree_html)
+
 def build_notes_page(notes, tree_html):
     """Generate notes.html listing all notes grouped by category."""
     regular = [(m, c) for m, c in notes if not m.get('title', '').startswith('journal:')]
     body = f'''
 <h1 class="doctitle">All Notes</h1>
-<p class="docsub">organized by category — tags act like folders</p>
 <div class="search-wrap">
   <div class="search">{ICONS['search']}<input class="searchbox" type="search" placeholder="Search notes…" aria-label="Search notes"></div>
   {'' if regular else '<p class="empty">no notes yet</p>'}
@@ -916,7 +934,6 @@ def build_tags_page(notes, tree_html):
     count = sum(1 for m, _ in notes if _primary_tag(m))
     body = f'''
 <h1 class="doctitle">Categories</h1>
-<p class="docsub">a folder for every tag — click to explore {count} categorized note{'s' if count != 1 else ''}</p>
 <div class="ttree" style="font-size:.98em">{tree}
 </div>'''
     return page_shell('Categories', body, 'tags', tree_html)
@@ -1061,6 +1078,7 @@ def main():
         build_index(notes, tree_html, emojis), encoding='utf-8')
     (SITE_DIR / 'notes.html').write_text(build_notes_page(notes, tree_html), encoding='utf-8')
     (SITE_DIR / 'tags.html').write_text(build_tags_page(notes, tree_html), encoding='utf-8')
+    (SITE_DIR / 'journals.html').write_text(build_journals_page(notes, tree_html, emojis), encoding='utf-8')
     (SITE_DIR / 'README.md').write_text(build_readme(notes, emojis), encoding='utf-8')
 
     for meta, content in notes:
