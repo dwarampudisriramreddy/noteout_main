@@ -52,8 +52,9 @@ class _NoteListScreenState extends State<NoteListScreen> {
 
   List<Note> get _filteredNotes {
     return _notes.where((note) {
-      final matchesTag =
-          _selectedTag.isEmpty || note.tags.contains(_selectedTag);
+      final matchesTag = _selectedTag.isEmpty ||
+          note.tags.contains(_selectedTag) ||
+          note.tags.any((t) => t.startsWith('$_selectedTag/'));
       final matchesSearch = _searchQuery.isEmpty ||
           note.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           note.content.toLowerCase().contains(_searchQuery.toLowerCase());
@@ -233,11 +234,11 @@ class _NoteListScreenState extends State<NoteListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
+            const Text(
               'noteout',
               style: TextStyle(
                 fontFamily: 'monospace',
@@ -247,10 +248,10 @@ class _NoteListScreenState extends State<NoteListScreen> {
                 height: 1.0,
               ),
             ),
-            SizedBox(height: 2),
+            const SizedBox(height: 2),
             Text(
-              'take your thoughts out',
-              style: TextStyle(
+              SettingsService.userName.isEmpty ? 'get your thoughts out' : 'get your thoughts out, ${SettingsService.userName}',
+              style: const TextStyle(
                 fontFamily: 'monospace',
                 fontSize: 9,
                 fontWeight: FontWeight.w400,
@@ -370,17 +371,57 @@ class _NoteListScreenState extends State<NoteListScreen> {
     );
   }
 
+  List<String> _directChildren(String tag) {
+    final prefix = '$tag/';
+    final segs = <String>{};
+    for (final t in _allTags) {
+      if (t.startsWith(prefix)) {
+        final seg = t.substring(prefix.length).split('/').first;
+        segs.add('$tag/$seg');
+      }
+    }
+    return segs.toList()..sort();
+  }
+
   Widget _buildTagBar() {
-    return SizedBox(
-      height: 36,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [
-          _tagChip('all', _selectedTag.isEmpty),
-          ..._allTags.map((t) => _tagChip(t, _selectedTag == t)),
-        ],
-      ),
+    final subTags =
+        _selectedTag.isEmpty ? const <String>[] : _directChildren(_selectedTag);
+    return Column(
+      children: [
+        SizedBox(
+          height: 36,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            children: [
+              _tagChip('all', _selectedTag.isEmpty),
+              ..._allTags.map((t) => _tagChip(t, _selectedTag == t)),
+            ],
+          ),
+        ),
+        if (subTags.isNotEmpty)
+          Container(
+            color: Theme.of(context)
+                .colorScheme
+                .surfaceContainerLow
+                .withValues(alpha: 0.5),
+            height: 34,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: Center(
+                    child: Icon(Icons.subdirectory_arrow_right,
+                        size: 14, color: context.nFaint),
+                  ),
+                ),
+                ...subTags.map((t) => _tagChip(t, _selectedTag == t)),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
@@ -413,33 +454,46 @@ class _NoteListScreenState extends State<NoteListScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.note_add_outlined, size: 48, color: context.nSubtle),
-          const SizedBox(height: 12),
-          Text(
-            _searchQuery.isNotEmpty || _selectedTag.isNotEmpty
-                ? 'no matching notes'
-                : 'no notes yet',
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 13,
-              color: context.nFaint,
-            ),
-          ),
-          const SizedBox(height: 16),
-          if (_searchQuery.isEmpty && _selectedTag.isEmpty)
-            Text(
-              'tap + to create one',
-              style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 11,
-                color: context.nSubtle,
+    return RefreshIndicator(
+      onRefresh: _loadNotes,
+      color: Theme.of(context).colorScheme.primary,
+      child: LayoutBuilder(
+        builder: (context, constraints) => ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            Container(
+              height: constraints.maxHeight,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.note_add_outlined, size: 48, color: context.nSubtle),
+                  const SizedBox(height: 12),
+                  Text(
+                    _searchQuery.isNotEmpty || _selectedTag.isNotEmpty
+                        ? 'no matching notes'
+                        : 'no notes yet',
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 13,
+                      color: context.nFaint,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_searchQuery.isEmpty && _selectedTag.isEmpty)
+                    Text(
+                      'tap + to create one',
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 11,
+                        color: context.nSubtle,
+                      ),
+                    ),
+                ],
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }

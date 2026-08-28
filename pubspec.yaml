@@ -50,10 +50,10 @@ flutter_launcher_icons:
 flutter_native_splash:
   color: "#FFFFFF"
   color_dark: "#0E0E12"
-  image: "assets/splash_light.png"
-  image_dark: "assets/splash_dark.png"
+  image: "assets/logo.png"
+  image_dark: "assets/logo.png"
   android_12:
     color: "#FFFFFF"
     color_dark: "#0E0E12"
-    image: "assets/splash_light.png"
-    image_dark: "assets/splash_dark.png"
+    image: "assets/logo.png"
+    image_dark: "assets/logo.png"

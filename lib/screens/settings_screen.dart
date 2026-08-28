@@ -7,6 +7,7 @@ import '../services/github_sync_service.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
+import 'site_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -185,6 +186,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         mimeType: 'text/markdown',
         name: 'noteout-export.md',
       )],
+    );
+  }
+
+  Future<void> _openSiteSettings() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (_) => const SiteSettingsScreen()),
     );
   }
 
@@ -424,6 +433,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'export all notes',
                 'share as markdown file',
                 _exportAll,
+                false,
+              ),
+            ],
+          ),
+          _buildSection(
+            'site',
+            [
+              _buildActionTile(
+                'site settings',
+                'site layout, colors & home page',
+                _openSiteSettings,
                 false,
               ),
             ],

@@ -1,127 +1,271 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>calendar — noteout</title>
-  <meta name="description" content="noteout — take your thoughts out">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-  <style>
-    :root{--pico-font-family:monospace}
-    body{max-width:720px;margin:0 auto;padding:var(--pico-typography-spacing-top) var(--pico-spacing)}
-    h1{font-size:2em;letter-spacing:-1px;margin-bottom:0}
-    .tagline{color:var(--pico-muted-color);font-size:0.85em;margin-bottom:var(--pico-typography-spacing-top)}
-    nav{display:flex;gap:var(--pico-spacing);margin-bottom:var(--pico-typography-spacing-top);font-size:0.85em}
-    nav a{color:var(--pico-muted-color);text-decoration:none}
-    nav a:hover{color:var(--pico-color)}
-    .note-card{padding:var(--pico-typography-spacing-inline);margin-bottom:0;border-bottom:1px solid var(--pico-card-border-color)}
-    .note-card header{font-weight:600;font-size:1em;margin-bottom:0;padding-bottom:0}
-    .note-card p{color:var(--pico-muted-color);font-size:0.85em;margin-bottom:0.25em}
-    .note-card footer{font-size:0.75em;color:var(--pico-muted-color)}
-    .note-card a{color:inherit;text-decoration:none}
-    .note-card a:hover{opacity:0.7}
-    .tag{margin-right:0.5em;font-size:0.85em;color:var(--pico-muted-color)}
-    .journal-card header{font-size:0.9em}
-    h2{font-size:1.1em;margin-top:var(--pico-typography-spacing-top);margin-bottom:var(--pico-spacing);color:var(--pico-muted-color)}
-    .empty{color:var(--pico-muted-color);text-align:center;margin-top:4em}
-    .wiki-link{color:var(--pico-muted-color);text-decoration:underline;text-decoration-color:var(--pico-card-border-color);text-underline-offset:2px;margin-right:0.5em;font-size:0.9em}
-    .links{margin-top:var(--pico-typography-spacing-top);padding-top:var(--pico-spacing);border-top:1px solid var(--pico-card-border-color);font-size:0.85em;color:var(--pico-muted-color)}
-    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:var(--pico-typography-spacing-top)}
-    .day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:0.9em;border-radius:8px;font-variant-numeric:tabular-nums}
-    .day.empty{visibility:hidden}
-    .day.today{background:var(--pico-color);color:var(--pico-card-background-color);font-weight:600}
-    .day.has-note{background:var(--pico-card-border-color)}
-    .day a{color:inherit;text-decoration:none;display:flex;align-items:center;justify-content:center;width:100%;height:100%}
-    .day a:hover{opacity:0.7}
-    .month{margin-bottom:var(--pico-typography-spacing-top)}
-    .month h3{font-size:1em;margin-bottom:var(--pico-spacing);color:var(--pico-muted-color)}
-    footer.site{margin-top:var(--pico-typography-spacing-top);padding-top:var(--pico-spacing);border-top:1px solid var(--pico-card-border-color);font-size:0.75em;color:var(--pico-muted-color);text-align:center}
-  </style>
+  <title>Journal — Your Name&#x27;s notes</title>
+  <meta name="description" content="Your Name's notes">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%234f46e5'/><stop offset='1' stop-color='%238b5cf6'/></linearGradient></defs><rect width='100' height='100' rx='24' fill='url(%23g)'/><text x='50' y='66' font-size='44' text-anchor='middle' fill='white' font-family='Arial,sans-serif' font-weight='bold'>N</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{delimiters:[{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}]})"></script>
+  <style>:root{
+  --pc:#4f46e5;
+  --accent:#8b5cf6;
+  --primary:var(--pc);
+  --primary-soft:color-mix(in srgb, var(--pc) 12%, transparent);
+  --ring:color-mix(in srgb, var(--pc) 22%, transparent);
+}
+[data-theme=dark]{
+  --primary:color-mix(in srgb, var(--pc) 62%, white);
+  --primary-soft:color-mix(in srgb, var(--pc) 20%, transparent);
+}
+:root{
+  --bg:#f5f6fa; --surface:#ffffff; --surface-2:#eef0f7; --line:#e4e6f0;
+  --text:#1c2130; --muted:#68718a; --faint:#9aa3b8;
+  --primary:#4f46e5; --primary-strong:#4338ca; --accent:#8b5cf6;
+  --primary-soft:#eef0ff; --ring:rgba(79,70,229,.16);
+  --shadow-sm:0 1px 2px rgba(16,20,40,.06);
+  --shadow:0 8px 24px -12px rgba(16,20,40,.25);
+  --radius:14px;
+}
+[data-theme=dark]{
+  --bg:#0b0e17; --surface:#12161f; --surface-2:#1a1f2c; --line:#232a3b;
+  --text:#e6e9f2; --muted:#9aa3b8; --faint:#67708a;
+  --primary:#818cf8; --primary-strong:#a5b4fc; --accent:#a78bfa;
+  --primary-soft:rgba(129,140,248,.14); --ring:rgba(129,140,248,.22);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow:0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
+img{max-width:100%}
+a{color:var(--primary);text-decoration:none}
+svg{flex:none}
+
+.topbar{position:sticky;top:0;z-index:40;height:60px;display:flex;align-items:center;gap:12px;padding:0 18px;background:var(--surface);border-bottom:1px solid var(--line)}
+.topbar .logo{display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:.96em;color:var(--text);min-width:0}
+.topbar .logo img{width:30px;height:30px;border-radius:50%;object-fit:cover;flex:none}
+.topbar .logo span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.burger{display:none;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--text);flex:none}
+.icobtn{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;transition:.15s;flex:none}
+.icobtn:hover{color:var(--primary);border-color:var(--primary)}
+.topnav{display:flex;gap:4px;margin-left:auto;align-items:center}
+.topnav a{padding:7px 13px;border-radius:9px;color:var(--muted);font-weight:500;font-size:.92em}
+.topnav a:hover{color:var(--text);background:var(--surface-2)}
+.topnav a.active{color:var(--primary);background:var(--primary-soft)}
+
+.layout{display:grid;grid-template-columns:280px minmax(0,1fr);max-width:1300px;margin:0 auto}
+.sidebar{position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:18px 12px 40px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.content{padding:42px 46px 70px;min-width:0}
+@media(max-width:920px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+  .sidebar{position:fixed;left:0;top:60px;bottom:0;height:auto;width:290px;transform:translateX(-102%);transition:transform .22s ease;z-index:30;box-shadow:var(--shadow)}
+  body.nav-open .sidebar{transform:none}
+  .burger{display:inline-flex}
+  .content{padding:28px 20px 60px}
+}
+
+.brand{display:flex;align-items:center;gap:12px;padding:4px 8px;margin-bottom:16px;color:var(--text)}
+.brand img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--line);flex:none}
+.brand .b1{font-weight:700;font-size:.95em;line-height:1.2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.brand .b2{font-size:.75em;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.snav a{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:10px;font-weight:500;font-size:.92em;color:var(--text);margin-bottom:2px}
+.snav a:hover{background:var(--surface-2)}
+.snav a.active{background:var(--primary);color:#fff}
+.snav .ico{width:18px;height:18px;opacity:.85}
+.slabel{font-size:.7em;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);margin:20px 10px 8px}
+
+.ttree{font-size:.9em}
+.ttree .tmut{list-style:none;display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:9px;cursor:pointer;color:var(--text);font-weight:500;outline:none;transition:background .12s}
+.ttree .tmut:hover{background:var(--surface-2)}
+.ttree .tmut::-webkit-details-marker{display:none}
+.ttree .chev{width:16px;height:16px;color:var(--faint);display:inline-flex;align-items:center;justify-content:center;transition:transform .16s}
+.ttree details[open]>.tmut .chev{transform:rotate(90deg)}
+.ttree .fname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit}
+.ttree .fname:hover{color:var(--primary)}
+.ttree .fld{color:var(--muted)}
+.ttree .cnt{margin-left:auto;font-size:.72em;color:var(--muted);background:var(--surface-2);border-radius:99px;padding:0 7px;line-height:17px;flex:none}
+.ttree .kids{margin:2px 0 4px;padding-left:15px;border-left:1px dashed var(--line)}
+.ttree a.tlink{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:9px;color:var(--text);transition:background .12s}
+.ttree a.tlink:hover{background:var(--surface-2);color:var(--primary)}
+.ttree a.tlink .hash{color:var(--primary);font-weight:700}
+
+.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:7px;font-size:.85em;color:var(--muted);margin-bottom:16px}
+.crumbs a{color:var(--muted)}
+.crumbs a:hover{color:var(--primary)}
+.crumbs .sep{color:var(--faint)}
+.crumbs .cur{color:var(--text);font-weight:600;max-width:60vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+h1.doctitle{font-size:1.95em;letter-spacing:-.02em;line-height:1.2;margin:6px 0 6px;font-weight:800}
+.docsub{color:var(--muted);margin:0 0 26px;font-size:1.02em}
+
+.notes{display:flex;flex-direction:column;gap:14px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 19px;color:inherit;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+.card h3{margin:0 0 4px;font-size:1.02em;font-weight:700}
+.card p.ex{margin:0 0 12px;color:var(--muted);font-size:.89em;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.78em;color:var(--faint)}
+.card time{font-variant-numeric:tabular-nums}
+.card:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--primary)}
+.card.dd{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.card.dd{grid-template-columns:1fr}}
+.pill{display:inline-flex;align-items:center;gap:4px;background:var(--primary-soft);color:var(--primary);border-radius:99px;padding:2px 10px;font-weight:600;font-size:.8em;transition:background .15s,color .15s}
+.pill:hover{background:var(--primary);color:#fff}
+.section{display:flex;align-items:center;gap:10px;font-size:1.02em;font-weight:800;margin:32px 0 14px;color:var(--text)}
+.section .fldr{color:var(--primary)}
+.section .cnt{font-weight:600;font-size:.76em;color:var(--muted);background:var(--surface-2);border-radius:99px;padding:2px 9px}
+.section .more{margin-left:auto;font-size:.78em;font-weight:600;color:var(--muted)}
+.section .more:hover{color:var(--primary)}
+.group .notes{margin-bottom:6px}
+
+.hero{display:flex;align-items:center;gap:22px;padding:30px 32px;border-radius:20px;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;margin-bottom:26px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+[data-theme=dark] .hero{background:linear-gradient(135deg,var(--primary-strong),var(--accent))}
+.hero::after{content:'';position:absolute;right:-70px;top:-70px;width:230px;height:230px;border-radius:50%;background:rgba(255,255,255,.12)}
+.hero::before{content:'';position:absolute;left:38%;bottom:-90px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.08)}
+.hero img{width:86px;height:86px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.45);flex:none;position:relative;z-index:1}
+.hero .hx{position:relative;z-index:1;min-width:0}
+.hero h1{margin:0 0 4px;font-size:1.7em;letter-spacing:-.02em;line-height:1.15;color:#fff}
+.hero .tag{opacity:.92;font-size:1em;margin:0}
+.hero .at{opacity:.8;font-size:.84em;margin-top:2px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:26px 0 30px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 18px;display:flex;flex-direction:column;gap:2px;color:var(--text);text-decoration:none;transition:border-color .15s ease,box-shadow .15s ease}
+.stat[href]{cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease}
+.stat[href]:hover{border-color:var(--primary);box-shadow:var(--shadow)}
+.stat b{font-size:1.55em;font-weight:800;letter-spacing:-.02em}
+.stat span{font-size:.76em;color:var(--muted)}
+.stat.dark b{color:var(--primary)}
+.search{position:relative;margin-bottom:28px}
+.search input{width:100%;padding:12px 16px 12px 44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:.95em;outline:none;transition:border-color .15s,box-shadow .15s}
+.search input:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--ring)}
+.search svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--faint);pointer-events:none}
+.empty{color:var(--muted);text-align:center;margin:56px 0;font-size:1em}
+.empty-search{display:none;color:var(--muted);text-align:center;margin:34px 0;font-size:.95em}
+.tblocks{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px}
+.tblock{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;color:var(--text);transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;text-decoration:none;min-height:92px}
+.tblock:hover{transform:translateY(-2px);border-color:var(--primary);box-shadow:var(--shadow)}
+.tblock .tb-ico{color:var(--primary);display:flex;align-items:center}
+.tblock .tb-name{font-weight:700;font-size:.98em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tblock .tb-cnt{font-size:.78em;color:var(--muted)}
+
+.meta-line{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:22px}
+article{font-size:1.02em;max-width:860px}
+article h2{font-size:1.35em;margin:1.8em 0 .6em;letter-spacing:-.01em}
+article h3{font-size:1.14em}
+article h4{font-size:1.02em}
+article a{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--primary-soft)}
+article code{background:var(--surface-2);border:1px solid var(--line);padding:2px 6px;border-radius:6px;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,monospace;font-size:.85em}
+article pre{background:#0f1524;color:#e6e9f2;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:.86em;line-height:1.6;box-shadow:inset 0 1px 3px rgba(0,0,0,.25);font-family:'JetBrains Mono',ui-monospace,monospace}
+[data-theme=dark] article pre{background:#05070d}
+article pre code{background:none;border:none;padding:0;color:inherit}
+article blockquote{margin:1.4em 0;border-left:3px solid var(--primary);background:var(--surface-2);padding:14px 18px;border-radius:0 10px 10px 0;color:var(--muted);font-style:italic}
+article img.note-img{border-radius:12px;border:1px solid var(--line);box-shadow:var(--shadow-sm);margin:10px 0}
+article hr{border:none;border-top:2px dashed var(--line);margin:28px 0}
+article ul,article ol{padding-left:1.4em}
+article li{margin:.35em 0}
+.wiki-link{background:var(--primary-soft);border-radius:6px;padding:1px 7px;color:var(--primary);text-decoration:none;font-weight:500;white-space:nowrap}
+.wiki-link:hover{background:var(--primary);color:#fff}
+.katex-display{overflow-x:auto;overflow-y:hidden;padding:.4em 0}
+.links{border-top:1px solid var(--line);margin-top:36px;padding-top:20px}
+.links h3{font-size:.9em;margin:0 0 10px}
+.links .wiki-link{margin-right:4px;display:inline-block;margin-bottom:6px}
+
+.cal-wrap{display:flex;flex-direction:column;gap:24px}
+.cal-embed{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.cal-embed .month{margin:0}
+.month{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:18px 18px 20px}
+.month h2{margin:0 0 12px;font-size:1.05em;font-weight:800}
+.cweek{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:6px;padding:0 2px}
+.cweek span{text-align:center;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.64em;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:9px;font-variant-numeric:tabular-nums;color:var(--text);background:var(--surface-2);border:1px solid transparent}
+.day.empty{background:transparent}
+.day .cel{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;height:100%;border-radius:inherit;text-decoration:none;color:inherit}
+.day .dn{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.86em;font-weight:500;line-height:1;color:var(--text)}
+.day .em{font-size:15px;line-height:1;height:15px}
+.day .dot{width:5px;height:5px;border-radius:50%;background:#3b82f6}
+.day.today .dn{color:#3b82f6;font-weight:700}
+.day.today{box-shadow:inset 0 0 0 1.5px #3b82f6}
+.day.has-note{border-color:var(--primary);background:var(--primary-soft);cursor:pointer}
+.day.has-note .dn{color:var(--primary);font-weight:600}
+.day.has-note:hover{border-color:var(--primary);box-shadow:var(--shadow)}
+
+footer.site{max-width:1300px;margin:0 auto;border-top:1px solid var(--line);padding:22px 30px 40px;color:var(--muted);font-size:.84em;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+footer.site b{color:var(--text)}
+.scrim{display:none;position:fixed;inset:0;background:rgba(8,10,20,.45);z-index:29}
+body.nav-open .scrim{display:block}
+@media(max-width:920px){
+  .topnav{display:none}
+}
+</style>
 </head>
 <body>
-  <h1>noteout</h1>
-  <p class="tagline">take your thoughts out</p>
-  <nav><a href="index.html">notes</a> <a href="calendar.html"><strong>calendar</strong></a></nav>
-  <div class="month">
-  <h3>January</h3>
+  <div class="scrim" onclick="toggleNav()"></div>
+  <header class="topbar">
+    <button class="burger" onclick="toggleNav()" aria-label="Menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <button class="icobtn" onclick="toggleTheme()" aria-label="Toggle theme"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+    <a class="logo" href="index.html"><span>Your Name</span></a>
+    <nav class="topnav"><a href="index.html">Home</a><a href="notes.html">Notes</a><a href="tags.html">Tags</a><a href="calendar.html" class="active">Journal</a></nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <a class="brand" href="index.html"><span><div class="b1">Your Name</div><div class="b2">notes</div></span></a>
+      <nav class="snav"><a href="index.html"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.3V21h14V9.3"/></svg>Home</a><a href="notes.html"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Notes</a><a href="tags.html"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>Tags</a><a class="active" href="calendar.html"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Journal</a></nav>
+      <div class="slabel">Categories</div>
+      <div class="ttree">
+      </div>
+    </aside>
+    <main class="content">
+      
+<h1 class="doctitle">Journal</h1>
+<p class="docsub">2026 — days with a note are highlighted</p>
+<div class="cal-wrap cal-embed">
+<div class="month">
+  <h2>January</h2>
+  <div class="cweek"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
   <div class="cal-grid">
     <div class="day empty"></div>
       <div class="day empty"></div>
       <div class="day empty"></div>
-      <div class="day">1</div>
-      <div class="day">2</div>
-      <div class="day">3</div>
-      <div class="day">4</div>
-      <div class="day">5</div>
-      <div class="day">6</div>
-      <div class="day">7</div>
-      <div class="day">8</div>
-      <div class="day">9</div>
-      <div class="day">10</div>
-      <div class="day">11</div>
-      <div class="day">12</div>
-      <div class="day">13</div>
-      <div class="day">14</div>
-      <div class="day">15</div>
-      <div class="day">16</div>
-      <div class="day">17</div>
-      <div class="day">18</div>
-      <div class="day">19</div>
-      <div class="day">20</div>
-      <div class="day">21</div>
-      <div class="day">22</div>
-      <div class="day">23</div>
-      <div class="day">24</div>
-      <div class="day">25</div>
-      <div class="day">26</div>
-      <div class="day">27</div>
-      <div class="day">28</div>
-      <div class="day">29</div>
-      <div class="day">30</div>
-      <div class="day">31</div>
+      <div class="day"><span class="dn">1</span></div>
+      <div class="day"><span class="dn">2</span></div>
+      <div class="day"><span class="dn">3</span></div>
+      <div class="day"><span class="dn">4</span></div>
+      <div class="day"><span class="dn">5</span></div>
+      <div class="day"><span class="dn">6</span></div>
+      <div class="day"><span class="dn">7</span></div>
+      <div class="day"><span class="dn">8</span></div>
+      <div class="day"><span class="dn">9</span></div>
+      <div class="day"><span class="dn">10</span></div>
+      <div class="day"><span class="dn">11</span></div>
+      <div class="day"><span class="dn">12</span></div>
+      <div class="day"><span class="dn">13</span></div>
+      <div class="day"><span class="dn">14</span></div>
+      <div class="day"><span class="dn">15</span></div>
+      <div class="day"><span class="dn">16</span></div>
+      <div class="day"><span class="dn">17</span></div>
+      <div class="day"><span class="dn">18</span></div>
+      <div class="day"><span class="dn">19</span></div>
+      <div class="day"><span class="dn">20</span></div>
+      <div class="day"><span class="dn">21</span></div>
+      <div class="day"><span class="dn">22</span></div>
+      <div class="day"><span class="dn">23</span></div>
+      <div class="day"><span class="dn">24</span></div>
+      <div class="day"><span class="dn">25</span></div>
+      <div class="day"><span class="dn">26</span></div>
+      <div class="day"><span class="dn">27</span></div>
+      <div class="day"><span class="dn">28</span></div>
+      <div class="day"><span class="dn">29</span></div>
+      <div class="day"><span class="dn">30</span></div>
+      <div class="day"><span class="dn">31</span></div>
   </div>
 </div>
 <div class="month">
-  <h3>February</h3>
-  <div class="cal-grid">
-    <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day">1</div>
-      <div class="day">2</div>
-      <div class="day">3</div>
-      <div class="day">4</div>
-      <div class="day">5</div>
-      <div class="day">6</div>
-      <div class="day">7</div>
-      <div class="day">8</div>
-      <div class="day">9</div>
-      <div class="day">10</div>
-      <div class="day">11</div>
-      <div class="day">12</div>
-      <div class="day">13</div>
-      <div class="day">14</div>
-      <div class="day">15</div>
-      <div class="day">16</div>
-      <div class="day">17</div>
-      <div class="day">18</div>
-      <div class="day">19</div>
-      <div class="day">20</div>
-      <div class="day">21</div>
-      <div class="day">22</div>
-      <div class="day">23</div>
-      <div class="day">24</div>
-      <div class="day">25</div>
-      <div class="day">26</div>
-      <div class="day">27</div>
-      <div class="day">28</div>
-  </div>
-</div>
-<div class="month">
-  <h3>March</h3>
+  <h2>February</h2>
+  <div class="cweek"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
   <div class="cal-grid">
     <div class="day empty"></div>
       <div class="day empty"></div>
@@ -129,307 +273,39 @@
       <div class="day empty"></div>
       <div class="day empty"></div>
       <div class="day empty"></div>
-      <div class="day">1</div>
-      <div class="day">2</div>
-      <div class="day">3</div>
-      <div class="day">4</div>
-      <div class="day">5</div>
-      <div class="day">6</div>
-      <div class="day">7</div>
-      <div class="day">8</div>
-      <div class="day">9</div>
-      <div class="day">10</div>
-      <div class="day">11</div>
-      <div class="day">12</div>
-      <div class="day">13</div>
-      <div class="day">14</div>
-      <div class="day">15</div>
-      <div class="day">16</div>
-      <div class="day">17</div>
-      <div class="day">18</div>
-      <div class="day">19</div>
-      <div class="day">20</div>
-      <div class="day">21</div>
-      <div class="day">22</div>
-      <div class="day">23</div>
-      <div class="day">24</div>
-      <div class="day">25</div>
-      <div class="day">26</div>
-      <div class="day">27</div>
-      <div class="day">28</div>
-      <div class="day">29</div>
-      <div class="day">30</div>
-      <div class="day">31</div>
+      <div class="day"><span class="dn">1</span></div>
+      <div class="day"><span class="dn">2</span></div>
+      <div class="day"><span class="dn">3</span></div>
+      <div class="day"><span class="dn">4</span></div>
+      <div class="day"><span class="dn">5</span></div>
+      <div class="day"><span class="dn">6</span></div>
+      <div class="day"><span class="dn">7</span></div>
+      <div class="day"><span class="dn">8</span></div>
+      <div class="day"><span class="dn">9</span></div>
+      <div class="day"><span class="dn">10</span></div>
+      <div class="day"><span class="dn">11</span></div>
+      <div class="day"><span class="dn">12</span></div>
+      <div class="day"><span class="dn">13</span></div>
+      <div class="day"><span class="dn">14</span></div>
+      <div class="day"><span class="dn">15</span></div>
+      <div class="day"><span class="dn">16</span></div>
+      <div class="day"><span class="dn">17</span></div>
+      <div class="day"><span class="dn">18</span></div>
+      <div class="day"><span class="dn">19</span></div>
+      <div class="day"><span class="dn">20</span></div>
+      <div class="day"><span class="dn">21</span></div>
+      <div class="day"><span class="dn">22</span></div>
+      <div class="day"><span class="dn">23</span></div>
+      <div class="day"><span class="dn">24</span></div>
+      <div class="day"><span class="dn">25</span></div>
+      <div class="day"><span class="dn">26</span></div>
+      <div class="day"><span class="dn">27</span></div>
+      <div class="day"><span class="dn">28</span></div>
   </div>
 </div>
 <div class="month">
-  <h3>April</h3>
-  <div class="cal-grid">
-    <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day">1</div>
-      <div class="day">2</div>
-      <div class="day">3</div>
-      <div class="day">4</div>
-      <div class="day">5</div>
-      <div class="day">6</div>
-      <div class="day">7</div>
-      <div class="day">8</div>
-      <div class="day">9</div>
-      <div class="day">10</div>
-      <div class="day">11</div>
-      <div class="day">12</div>
-      <div class="day">13</div>
-      <div class="day">14</div>
-      <div class="day">15</div>
-      <div class="day">16</div>
-      <div class="day">17</div>
-      <div class="day">18</div>
-      <div class="day">19</div>
-      <div class="day">20</div>
-      <div class="day">21</div>
-      <div class="day">22</div>
-      <div class="day">23</div>
-      <div class="day">24</div>
-      <div class="day">25</div>
-      <div class="day">26</div>
-      <div class="day">27</div>
-      <div class="day">28</div>
-      <div class="day">29</div>
-      <div class="day">30</div>
-  </div>
-</div>
-<div class="month">
-  <h3>May</h3>
-  <div class="cal-grid">
-    <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day">1</div>
-      <div class="day">2</div>
-      <div class="day">3</div>
-      <div class="day">4</div>
-      <div class="day">5</div>
-      <div class="day">6</div>
-      <div class="day">7</div>
-      <div class="day">8</div>
-      <div class="day">9</div>
-      <div class="day">10</div>
-      <div class="day">11</div>
-      <div class="day">12</div>
-      <div class="day">13</div>
-      <div class="day">14</div>
-      <div class="day">15</div>
-      <div class="day">16</div>
-      <div class="day">17</div>
-      <div class="day">18</div>
-      <div class="day">19</div>
-      <div class="day">20</div>
-      <div class="day">21</div>
-      <div class="day">22</div>
-      <div class="day">23</div>
-      <div class="day">24</div>
-      <div class="day">25</div>
-      <div class="day">26</div>
-      <div class="day">27</div>
-      <div class="day">28</div>
-      <div class="day">29</div>
-      <div class="day">30</div>
-      <div class="day">31</div>
-  </div>
-</div>
-<div class="month">
-  <h3>June</h3>
-  <div class="cal-grid">
-    <div class="day">1</div>
-      <div class="day">2</div>
-      <div class="day">3</div>
-      <div class="day">4</div>
-      <div class="day">5</div>
-      <div class="day">6</div>
-      <div class="day">7</div>
-      <div class="day">8</div>
-      <div class="day">9</div>
-      <div class="day">10</div>
-      <div class="day">11</div>
-      <div class="day">12</div>
-      <div class="day">13</div>
-      <div class="day">14</div>
-      <div class="day">15</div>
-      <div class="day">16</div>
-      <div class="day">17</div>
-      <div class="day">18</div>
-      <div class="day">19</div>
-      <div class="day">20</div>
-      <div class="day">21</div>
-      <div class="day">22</div>
-      <div class="day">23</div>
-      <div class="day">24</div>
-      <div class="day">25</div>
-      <div class="day">26</div>
-      <div class="day">27</div>
-      <div class="day">28</div>
-      <div class="day">29</div>
-      <div class="day">30</div>
-  </div>
-</div>
-<div class="month">
-  <h3>July</h3>
-  <div class="cal-grid">
-    <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day">1</div>
-      <div class="day">2</div>
-      <div class="day">3</div>
-      <div class="day">4</div>
-      <div class="day">5</div>
-      <div class="day">6</div>
-      <div class="day">7</div>
-      <div class="day">8</div>
-      <div class="day">9</div>
-      <div class="day">10</div>
-      <div class="day">11</div>
-      <div class="day">12</div>
-      <div class="day">13</div>
-      <div class="day">14</div>
-      <div class="day">15</div>
-      <div class="day">16</div>
-      <div class="day">17</div>
-      <div class="day">18</div>
-      <div class="day">19</div>
-      <div class="day">20</div>
-      <div class="day">21</div>
-      <div class="day">22</div>
-      <div class="day">23</div>
-      <div class="day">24</div>
-      <div class="day">25</div>
-      <div class="day">26</div>
-      <div class="day">27</div>
-      <div class="day">28</div>
-      <div class="day">29</div>
-      <div class="day">30</div>
-      <div class="day">31</div>
-  </div>
-</div>
-<div class="month">
-  <h3>August</h3>
-  <div class="cal-grid">
-    <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day">1</div>
-      <div class="day">2</div>
-      <div class="day">3</div>
-      <div class="day">4</div>
-      <div class="day">5</div>
-      <div class="day">6</div>
-      <div class="day">7</div>
-      <div class="day">8</div>
-      <div class="day">9</div>
-      <div class="day">10</div>
-      <div class="day">11</div>
-      <div class="day">12</div>
-      <div class="day">13</div>
-      <div class="day">14</div>
-      <div class="day">15</div>
-      <div class="day">16</div>
-      <div class="day">17</div>
-      <div class="day">18</div>
-      <div class="day">19</div>
-      <div class="day">20</div>
-      <div class="day">21</div>
-      <div class="day">22</div>
-      <div class="day">23</div>
-      <div class="day">24</div>
-      <div class="day">25</div>
-      <div class="day">26</div>
-      <div class="day today">27</div>
-      <div class="day">28</div>
-      <div class="day">29</div>
-      <div class="day">30</div>
-      <div class="day">31</div>
-  </div>
-</div>
-<div class="month">
-  <h3>September</h3>
-  <div class="cal-grid">
-    <div class="day empty"></div>
-      <div class="day">1</div>
-      <div class="day">2</div>
-      <div class="day">3</div>
-      <div class="day">4</div>
-      <div class="day">5</div>
-      <div class="day">6</div>
-      <div class="day">7</div>
-      <div class="day">8</div>
-      <div class="day">9</div>
-      <div class="day">10</div>
-      <div class="day">11</div>
-      <div class="day">12</div>
-      <div class="day">13</div>
-      <div class="day">14</div>
-      <div class="day">15</div>
-      <div class="day">16</div>
-      <div class="day">17</div>
-      <div class="day">18</div>
-      <div class="day">19</div>
-      <div class="day">20</div>
-      <div class="day">21</div>
-      <div class="day">22</div>
-      <div class="day">23</div>
-      <div class="day">24</div>
-      <div class="day">25</div>
-      <div class="day">26</div>
-      <div class="day">27</div>
-      <div class="day">28</div>
-      <div class="day">29</div>
-      <div class="day">30</div>
-  </div>
-</div>
-<div class="month">
-  <h3>October</h3>
-  <div class="cal-grid">
-    <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day empty"></div>
-      <div class="day">1</div>
-      <div class="day">2</div>
-      <div class="day">3</div>
-      <div class="day">4</div>
-      <div class="day">5</div>
-      <div class="day">6</div>
-      <div class="day">7</div>
-      <div class="day">8</div>
-      <div class="day">9</div>
-      <div class="day">10</div>
-      <div class="day">11</div>
-      <div class="day">12</div>
-      <div class="day">13</div>
-      <div class="day">14</div>
-      <div class="day">15</div>
-      <div class="day">16</div>
-      <div class="day">17</div>
-      <div class="day">18</div>
-      <div class="day">19</div>
-      <div class="day">20</div>
-      <div class="day">21</div>
-      <div class="day">22</div>
-      <div class="day">23</div>
-      <div class="day">24</div>
-      <div class="day">25</div>
-      <div class="day">26</div>
-      <div class="day">27</div>
-      <div class="day">28</div>
-      <div class="day">29</div>
-      <div class="day">30</div>
-      <div class="day">31</div>
-  </div>
-</div>
-<div class="month">
-  <h3>November</h3>
+  <h2>March</h2>
+  <div class="cweek"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
   <div class="cal-grid">
     <div class="day empty"></div>
       <div class="day empty"></div>
@@ -437,75 +313,424 @@
       <div class="day empty"></div>
       <div class="day empty"></div>
       <div class="day empty"></div>
-      <div class="day">1</div>
-      <div class="day">2</div>
-      <div class="day">3</div>
-      <div class="day">4</div>
-      <div class="day">5</div>
-      <div class="day">6</div>
-      <div class="day">7</div>
-      <div class="day">8</div>
-      <div class="day">9</div>
-      <div class="day">10</div>
-      <div class="day">11</div>
-      <div class="day">12</div>
-      <div class="day">13</div>
-      <div class="day">14</div>
-      <div class="day">15</div>
-      <div class="day">16</div>
-      <div class="day">17</div>
-      <div class="day">18</div>
-      <div class="day">19</div>
-      <div class="day">20</div>
-      <div class="day">21</div>
-      <div class="day">22</div>
-      <div class="day">23</div>
-      <div class="day">24</div>
-      <div class="day">25</div>
-      <div class="day">26</div>
-      <div class="day">27</div>
-      <div class="day">28</div>
-      <div class="day">29</div>
-      <div class="day">30</div>
+      <div class="day"><span class="dn">1</span></div>
+      <div class="day"><span class="dn">2</span></div>
+      <div class="day"><span class="dn">3</span></div>
+      <div class="day"><span class="dn">4</span></div>
+      <div class="day"><span class="dn">5</span></div>
+      <div class="day"><span class="dn">6</span></div>
+      <div class="day"><span class="dn">7</span></div>
+      <div class="day"><span class="dn">8</span></div>
+      <div class="day"><span class="dn">9</span></div>
+      <div class="day"><span class="dn">10</span></div>
+      <div class="day"><span class="dn">11</span></div>
+      <div class="day"><span class="dn">12</span></div>
+      <div class="day"><span class="dn">13</span></div>
+      <div class="day"><span class="dn">14</span></div>
+      <div class="day"><span class="dn">15</span></div>
+      <div class="day"><span class="dn">16</span></div>
+      <div class="day"><span class="dn">17</span></div>
+      <div class="day"><span class="dn">18</span></div>
+      <div class="day"><span class="dn">19</span></div>
+      <div class="day"><span class="dn">20</span></div>
+      <div class="day"><span class="dn">21</span></div>
+      <div class="day"><span class="dn">22</span></div>
+      <div class="day"><span class="dn">23</span></div>
+      <div class="day"><span class="dn">24</span></div>
+      <div class="day"><span class="dn">25</span></div>
+      <div class="day"><span class="dn">26</span></div>
+      <div class="day"><span class="dn">27</span></div>
+      <div class="day"><span class="dn">28</span></div>
+      <div class="day"><span class="dn">29</span></div>
+      <div class="day"><span class="dn">30</span></div>
+      <div class="day"><span class="dn">31</span></div>
   </div>
 </div>
 <div class="month">
-  <h3>December</h3>
+  <h2>April</h2>
+  <div class="cweek"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
   <div class="cal-grid">
     <div class="day empty"></div>
-      <div class="day">1</div>
-      <div class="day">2</div>
-      <div class="day">3</div>
-      <div class="day">4</div>
-      <div class="day">5</div>
-      <div class="day">6</div>
-      <div class="day">7</div>
-      <div class="day">8</div>
-      <div class="day">9</div>
-      <div class="day">10</div>
-      <div class="day">11</div>
-      <div class="day">12</div>
-      <div class="day">13</div>
-      <div class="day">14</div>
-      <div class="day">15</div>
-      <div class="day">16</div>
-      <div class="day">17</div>
-      <div class="day">18</div>
-      <div class="day">19</div>
-      <div class="day">20</div>
-      <div class="day">21</div>
-      <div class="day">22</div>
-      <div class="day">23</div>
-      <div class="day">24</div>
-      <div class="day">25</div>
-      <div class="day">26</div>
-      <div class="day">27</div>
-      <div class="day">28</div>
-      <div class="day">29</div>
-      <div class="day">30</div>
-      <div class="day">31</div>
+      <div class="day empty"></div>
+      <div class="day"><span class="dn">1</span></div>
+      <div class="day"><span class="dn">2</span></div>
+      <div class="day"><span class="dn">3</span></div>
+      <div class="day"><span class="dn">4</span></div>
+      <div class="day"><span class="dn">5</span></div>
+      <div class="day"><span class="dn">6</span></div>
+      <div class="day"><span class="dn">7</span></div>
+      <div class="day"><span class="dn">8</span></div>
+      <div class="day"><span class="dn">9</span></div>
+      <div class="day"><span class="dn">10</span></div>
+      <div class="day"><span class="dn">11</span></div>
+      <div class="day"><span class="dn">12</span></div>
+      <div class="day"><span class="dn">13</span></div>
+      <div class="day"><span class="dn">14</span></div>
+      <div class="day"><span class="dn">15</span></div>
+      <div class="day"><span class="dn">16</span></div>
+      <div class="day"><span class="dn">17</span></div>
+      <div class="day"><span class="dn">18</span></div>
+      <div class="day"><span class="dn">19</span></div>
+      <div class="day"><span class="dn">20</span></div>
+      <div class="day"><span class="dn">21</span></div>
+      <div class="day"><span class="dn">22</span></div>
+      <div class="day"><span class="dn">23</span></div>
+      <div class="day"><span class="dn">24</span></div>
+      <div class="day"><span class="dn">25</span></div>
+      <div class="day"><span class="dn">26</span></div>
+      <div class="day"><span class="dn">27</span></div>
+      <div class="day"><span class="dn">28</span></div>
+      <div class="day"><span class="dn">29</span></div>
+      <div class="day"><span class="dn">30</span></div>
   </div>
 </div>
-  <footer class="site">noteout &mdash; take your thoughts out</footer>
+<div class="month">
+  <h2>May</h2>
+  <div class="cweek"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+  <div class="cal-grid">
+    <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day"><span class="dn">1</span></div>
+      <div class="day"><span class="dn">2</span></div>
+      <div class="day"><span class="dn">3</span></div>
+      <div class="day"><span class="dn">4</span></div>
+      <div class="day"><span class="dn">5</span></div>
+      <div class="day"><span class="dn">6</span></div>
+      <div class="day"><span class="dn">7</span></div>
+      <div class="day"><span class="dn">8</span></div>
+      <div class="day"><span class="dn">9</span></div>
+      <div class="day"><span class="dn">10</span></div>
+      <div class="day"><span class="dn">11</span></div>
+      <div class="day"><span class="dn">12</span></div>
+      <div class="day"><span class="dn">13</span></div>
+      <div class="day"><span class="dn">14</span></div>
+      <div class="day"><span class="dn">15</span></div>
+      <div class="day"><span class="dn">16</span></div>
+      <div class="day"><span class="dn">17</span></div>
+      <div class="day"><span class="dn">18</span></div>
+      <div class="day"><span class="dn">19</span></div>
+      <div class="day"><span class="dn">20</span></div>
+      <div class="day"><span class="dn">21</span></div>
+      <div class="day"><span class="dn">22</span></div>
+      <div class="day"><span class="dn">23</span></div>
+      <div class="day"><span class="dn">24</span></div>
+      <div class="day"><span class="dn">25</span></div>
+      <div class="day"><span class="dn">26</span></div>
+      <div class="day"><span class="dn">27</span></div>
+      <div class="day"><span class="dn">28</span></div>
+      <div class="day"><span class="dn">29</span></div>
+      <div class="day"><span class="dn">30</span></div>
+      <div class="day"><span class="dn">31</span></div>
+  </div>
+</div>
+<div class="month">
+  <h2>June</h2>
+  <div class="cweek"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+  <div class="cal-grid">
+    <div class="day"><span class="dn">1</span></div>
+      <div class="day"><span class="dn">2</span></div>
+      <div class="day"><span class="dn">3</span></div>
+      <div class="day"><span class="dn">4</span></div>
+      <div class="day"><span class="dn">5</span></div>
+      <div class="day"><span class="dn">6</span></div>
+      <div class="day"><span class="dn">7</span></div>
+      <div class="day"><span class="dn">8</span></div>
+      <div class="day"><span class="dn">9</span></div>
+      <div class="day"><span class="dn">10</span></div>
+      <div class="day"><span class="dn">11</span></div>
+      <div class="day"><span class="dn">12</span></div>
+      <div class="day"><span class="dn">13</span></div>
+      <div class="day"><span class="dn">14</span></div>
+      <div class="day"><span class="dn">15</span></div>
+      <div class="day"><span class="dn">16</span></div>
+      <div class="day"><span class="dn">17</span></div>
+      <div class="day"><span class="dn">18</span></div>
+      <div class="day"><span class="dn">19</span></div>
+      <div class="day"><span class="dn">20</span></div>
+      <div class="day"><span class="dn">21</span></div>
+      <div class="day"><span class="dn">22</span></div>
+      <div class="day"><span class="dn">23</span></div>
+      <div class="day"><span class="dn">24</span></div>
+      <div class="day"><span class="dn">25</span></div>
+      <div class="day"><span class="dn">26</span></div>
+      <div class="day"><span class="dn">27</span></div>
+      <div class="day"><span class="dn">28</span></div>
+      <div class="day"><span class="dn">29</span></div>
+      <div class="day"><span class="dn">30</span></div>
+  </div>
+</div>
+<div class="month">
+  <h2>July</h2>
+  <div class="cweek"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+  <div class="cal-grid">
+    <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day"><span class="dn">1</span></div>
+      <div class="day"><span class="dn">2</span></div>
+      <div class="day"><span class="dn">3</span></div>
+      <div class="day"><span class="dn">4</span></div>
+      <div class="day"><span class="dn">5</span></div>
+      <div class="day"><span class="dn">6</span></div>
+      <div class="day"><span class="dn">7</span></div>
+      <div class="day"><span class="dn">8</span></div>
+      <div class="day"><span class="dn">9</span></div>
+      <div class="day"><span class="dn">10</span></div>
+      <div class="day"><span class="dn">11</span></div>
+      <div class="day"><span class="dn">12</span></div>
+      <div class="day"><span class="dn">13</span></div>
+      <div class="day"><span class="dn">14</span></div>
+      <div class="day"><span class="dn">15</span></div>
+      <div class="day"><span class="dn">16</span></div>
+      <div class="day"><span class="dn">17</span></div>
+      <div class="day"><span class="dn">18</span></div>
+      <div class="day"><span class="dn">19</span></div>
+      <div class="day"><span class="dn">20</span></div>
+      <div class="day"><span class="dn">21</span></div>
+      <div class="day"><span class="dn">22</span></div>
+      <div class="day"><span class="dn">23</span></div>
+      <div class="day"><span class="dn">24</span></div>
+      <div class="day"><span class="dn">25</span></div>
+      <div class="day"><span class="dn">26</span></div>
+      <div class="day"><span class="dn">27</span></div>
+      <div class="day"><span class="dn">28</span></div>
+      <div class="day"><span class="dn">29</span></div>
+      <div class="day"><span class="dn">30</span></div>
+      <div class="day"><span class="dn">31</span></div>
+  </div>
+</div>
+<div class="month">
+  <h2>August</h2>
+  <div class="cweek"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+  <div class="cal-grid">
+    <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day"><span class="dn">1</span></div>
+      <div class="day"><span class="dn">2</span></div>
+      <div class="day"><span class="dn">3</span></div>
+      <div class="day"><span class="dn">4</span></div>
+      <div class="day"><span class="dn">5</span></div>
+      <div class="day"><span class="dn">6</span></div>
+      <div class="day"><span class="dn">7</span></div>
+      <div class="day"><span class="dn">8</span></div>
+      <div class="day"><span class="dn">9</span></div>
+      <div class="day"><span class="dn">10</span></div>
+      <div class="day"><span class="dn">11</span></div>
+      <div class="day"><span class="dn">12</span></div>
+      <div class="day"><span class="dn">13</span></div>
+      <div class="day"><span class="dn">14</span></div>
+      <div class="day"><span class="dn">15</span></div>
+      <div class="day"><span class="dn">16</span></div>
+      <div class="day"><span class="dn">17</span></div>
+      <div class="day"><span class="dn">18</span></div>
+      <div class="day"><span class="dn">19</span></div>
+      <div class="day"><span class="dn">20</span></div>
+      <div class="day"><span class="dn">21</span></div>
+      <div class="day"><span class="dn">22</span></div>
+      <div class="day"><span class="dn">23</span></div>
+      <div class="day"><span class="dn">24</span></div>
+      <div class="day"><span class="dn">25</span></div>
+      <div class="day"><span class="dn">26</span></div>
+      <div class="day"><span class="dn">27</span></div>
+      <div class="day today"><span class="dn">28</span><span class="dot"></span></div>
+      <div class="day"><span class="dn">29</span></div>
+      <div class="day"><span class="dn">30</span></div>
+      <div class="day"><span class="dn">31</span></div>
+  </div>
+</div>
+<div class="month">
+  <h2>September</h2>
+  <div class="cweek"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+  <div class="cal-grid">
+    <div class="day empty"></div>
+      <div class="day"><span class="dn">1</span></div>
+      <div class="day"><span class="dn">2</span></div>
+      <div class="day"><span class="dn">3</span></div>
+      <div class="day"><span class="dn">4</span></div>
+      <div class="day"><span class="dn">5</span></div>
+      <div class="day"><span class="dn">6</span></div>
+      <div class="day"><span class="dn">7</span></div>
+      <div class="day"><span class="dn">8</span></div>
+      <div class="day"><span class="dn">9</span></div>
+      <div class="day"><span class="dn">10</span></div>
+      <div class="day"><span class="dn">11</span></div>
+      <div class="day"><span class="dn">12</span></div>
+      <div class="day"><span class="dn">13</span></div>
+      <div class="day"><span class="dn">14</span></div>
+      <div class="day"><span class="dn">15</span></div>
+      <div class="day"><span class="dn">16</span></div>
+      <div class="day"><span class="dn">17</span></div>
+      <div class="day"><span class="dn">18</span></div>
+      <div class="day"><span class="dn">19</span></div>
+      <div class="day"><span class="dn">20</span></div>
+      <div class="day"><span class="dn">21</span></div>
+      <div class="day"><span class="dn">22</span></div>
+      <div class="day"><span class="dn">23</span></div>
+      <div class="day"><span class="dn">24</span></div>
+      <div class="day"><span class="dn">25</span></div>
+      <div class="day"><span class="dn">26</span></div>
+      <div class="day"><span class="dn">27</span></div>
+      <div class="day"><span class="dn">28</span></div>
+      <div class="day"><span class="dn">29</span></div>
+      <div class="day"><span class="dn">30</span></div>
+  </div>
+</div>
+<div class="month">
+  <h2>October</h2>
+  <div class="cweek"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+  <div class="cal-grid">
+    <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day"><span class="dn">1</span></div>
+      <div class="day"><span class="dn">2</span></div>
+      <div class="day"><span class="dn">3</span></div>
+      <div class="day"><span class="dn">4</span></div>
+      <div class="day"><span class="dn">5</span></div>
+      <div class="day"><span class="dn">6</span></div>
+      <div class="day"><span class="dn">7</span></div>
+      <div class="day"><span class="dn">8</span></div>
+      <div class="day"><span class="dn">9</span></div>
+      <div class="day"><span class="dn">10</span></div>
+      <div class="day"><span class="dn">11</span></div>
+      <div class="day"><span class="dn">12</span></div>
+      <div class="day"><span class="dn">13</span></div>
+      <div class="day"><span class="dn">14</span></div>
+      <div class="day"><span class="dn">15</span></div>
+      <div class="day"><span class="dn">16</span></div>
+      <div class="day"><span class="dn">17</span></div>
+      <div class="day"><span class="dn">18</span></div>
+      <div class="day"><span class="dn">19</span></div>
+      <div class="day"><span class="dn">20</span></div>
+      <div class="day"><span class="dn">21</span></div>
+      <div class="day"><span class="dn">22</span></div>
+      <div class="day"><span class="dn">23</span></div>
+      <div class="day"><span class="dn">24</span></div>
+      <div class="day"><span class="dn">25</span></div>
+      <div class="day"><span class="dn">26</span></div>
+      <div class="day"><span class="dn">27</span></div>
+      <div class="day"><span class="dn">28</span></div>
+      <div class="day"><span class="dn">29</span></div>
+      <div class="day"><span class="dn">30</span></div>
+      <div class="day"><span class="dn">31</span></div>
+  </div>
+</div>
+<div class="month">
+  <h2>November</h2>
+  <div class="cweek"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+  <div class="cal-grid">
+    <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day empty"></div>
+      <div class="day"><span class="dn">1</span></div>
+      <div class="day"><span class="dn">2</span></div>
+      <div class="day"><span class="dn">3</span></div>
+      <div class="day"><span class="dn">4</span></div>
+      <div class="day"><span class="dn">5</span></div>
+      <div class="day"><span class="dn">6</span></div>
+      <div class="day"><span class="dn">7</span></div>
+      <div class="day"><span class="dn">8</span></div>
+      <div class="day"><span class="dn">9</span></div>
+      <div class="day"><span class="dn">10</span></div>
+      <div class="day"><span class="dn">11</span></div>
+      <div class="day"><span class="dn">12</span></div>
+      <div class="day"><span class="dn">13</span></div>
+      <div class="day"><span class="dn">14</span></div>
+      <div class="day"><span class="dn">15</span></div>
+      <div class="day"><span class="dn">16</span></div>
+      <div class="day"><span class="dn">17</span></div>
+      <div class="day"><span class="dn">18</span></div>
+      <div class="day"><span class="dn">19</span></div>
+      <div class="day"><span class="dn">20</span></div>
+      <div class="day"><span class="dn">21</span></div>
+      <div class="day"><span class="dn">22</span></div>
+      <div class="day"><span class="dn">23</span></div>
+      <div class="day"><span class="dn">24</span></div>
+      <div class="day"><span class="dn">25</span></div>
+      <div class="day"><span class="dn">26</span></div>
+      <div class="day"><span class="dn">27</span></div>
+      <div class="day"><span class="dn">28</span></div>
+      <div class="day"><span class="dn">29</span></div>
+      <div class="day"><span class="dn">30</span></div>
+  </div>
+</div>
+<div class="month">
+  <h2>December</h2>
+  <div class="cweek"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+  <div class="cal-grid">
+    <div class="day empty"></div>
+      <div class="day"><span class="dn">1</span></div>
+      <div class="day"><span class="dn">2</span></div>
+      <div class="day"><span class="dn">3</span></div>
+      <div class="day"><span class="dn">4</span></div>
+      <div class="day"><span class="dn">5</span></div>
+      <div class="day"><span class="dn">6</span></div>
+      <div class="day"><span class="dn">7</span></div>
+      <div class="day"><span class="dn">8</span></div>
+      <div class="day"><span class="dn">9</span></div>
+      <div class="day"><span class="dn">10</span></div>
+      <div class="day"><span class="dn">11</span></div>
+      <div class="day"><span class="dn">12</span></div>
+      <div class="day"><span class="dn">13</span></div>
+      <div class="day"><span class="dn">14</span></div>
+      <div class="day"><span class="dn">15</span></div>
+      <div class="day"><span class="dn">16</span></div>
+      <div class="day"><span class="dn">17</span></div>
+      <div class="day"><span class="dn">18</span></div>
+      <div class="day"><span class="dn">19</span></div>
+      <div class="day"><span class="dn">20</span></div>
+      <div class="day"><span class="dn">21</span></div>
+      <div class="day"><span class="dn">22</span></div>
+      <div class="day"><span class="dn">23</span></div>
+      <div class="day"><span class="dn">24</span></div>
+      <div class="day"><span class="dn">25</span></div>
+      <div class="day"><span class="dn">26</span></div>
+      <div class="day"><span class="dn">27</span></div>
+      <div class="day"><span class="dn">28</span></div>
+      <div class="day"><span class="dn">29</span></div>
+      <div class="day"><span class="dn">30</span></div>
+      <div class="day"><span class="dn">31</span></div>
+  </div>
+</div>
+</div>
+    </main>
+  </div>
+
+  <footer class="site">
+    <div>© 2026 <b>Your Name</b> — notes &amp; thoughts</div>
+    <div>made with noteout</div>
+  </footer>
+  <script>
+(function(){try{var t=localStorage.getItem('theme');if(t){document.documentElement.setAttribute('data-theme',t);}else{var d=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',d);}}catch(e){}})();
+function toggleTheme(){var h=document.documentElement;var n=h.getAttribute('data-theme')==='dark'?'light':'dark';h.setAttribute('data-theme',n);try{localStorage.setItem('theme',n);}catch(e){}}
+function toggleNav(){document.body.classList.toggle('nav-open');}
+document.addEventListener('click',function(e){
+  if(e.target.closest('.sidebar a')){document.body.classList.remove('nav-open');}
+});
+document.querySelectorAll('.searchbox').forEach(function(input){
+  input.addEventListener('input',function(){
+    var q=this.value.toLowerCase().trim();
+    var wrap=this.closest('.search-wrap');
+    if(!wrap)return;
+    var cards=wrap.querySelectorAll('.card');
+    var any=false;
+    cards.forEach(function(c){
+      var txt=c.getAttribute('data-search')||'';
+      var hit=!q||txt.toLowerCase().indexOf(q)>-1;
+      c.style.display=hit?'':'none';
+      if(hit)any=true;
+    });
+    var emp=wrap.querySelectorAll('.empty-search');
+    emp.forEach(function(e){e.style.display=any?'none':'block';});
+  });
+});
+</script>
 </body>
 </html>

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/github_auth_service.dart';
 import '../services/github_sync_service.dart';
-import '../services/settings_service.dart';
+import 'profile_onboarding_screen.dart';
 import '../theme/app_theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -60,7 +60,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
       SiteStatusMonitor.instance.start();
       unawaited(_syncAndGoHome());
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ProfileOnboardingScreen()));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -83,8 +83,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _skip() {
-    SettingsService.hasSkippedOnboarding = true;
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ProfileOnboardingScreen()));
   }
 
   @override

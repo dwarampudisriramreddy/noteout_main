@@ -420,34 +420,80 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   Future<void> _showAddTagDialog() async {
+    final allTags = await StorageService.getAllTags();
+    final currentTags = _note!.tags;
+    final availableTags = allTags.where((t) => !currentTags.contains(t)).toList();
+    
     final controller = TextEditingController();
+    
+    if (!mounted) return;
     final tag = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('add tag',
             style: TextStyle(fontFamily: 'monospace', fontSize: 14)),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-          decoration: InputDecoration(
-            hintText: 'tag name',
-            hintStyle: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 13,
-              color: context.nFaint,
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: 'tag name',
+                    hintStyle: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 13,
+                      color: context.nFaint,
+                    ),
+                    filled: true,
+                    fillColor: context.nPanel2,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                  onSubmitted: (_) => Navigator.pop(ctx, controller.text.trim()),
+                ),
+                if (availableTags.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text('existing tags:', 
+                      style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: context.nFaint)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: availableTags.map((t) {
+                      return GestureDetector(
+                        onTap: () => Navigator.pop(ctx, t),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: context.nPanel2,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '#$t',
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 11,
+                              color: context.nMuted,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ],
             ),
-            filled: true,
-            fillColor: context.nPanel2,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(6),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           ),
-          onChanged: (_) {},
-          onSubmitted: (_) => Navigator.pop(ctx, controller.text.trim()),
         ),
         actions: [
           TextButton(

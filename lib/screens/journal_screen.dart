@@ -19,6 +19,7 @@ class _JournalScreenState extends State<JournalScreen> {
   DateTime? _selectedDate;
   Note? _selectedNote;
   bool _isLoading = false;
+  Set<String> _journalDates = {};
 
   @override
   void initState() {
@@ -37,10 +38,20 @@ class _JournalScreenState extends State<JournalScreen> {
   Future<void> _loadDayNote() async {
     if (_selectedDate == null) return;
     setState(() => _isLoading = true);
+
+    final allNotes = await StorageService.getAllNotes();
+    final dates = <String>{};
+    for (final note in allNotes) {
+      if (note.title.startsWith('journal:')) {
+        dates.add(note.title.replaceFirst('journal:', ''));
+      }
+    }
+
     final title = _journalTitle(_selectedDate!);
     final note = await StorageService.getNoteByTitle(title);
     if (mounted) {
       setState(() {
+        _journalDates = dates;
         _selectedNote = note;
         _isLoading = false;
       });
@@ -214,6 +225,7 @@ class _JournalScreenState extends State<JournalScreen> {
           date.year == _selectedDate!.year &&
           date.month == _selectedDate!.month &&
           date.day == _selectedDate!.day;
+      final hasNote = _journalDates.contains(dateKey);
 
       cells.add(
         GestureDetector(
@@ -222,13 +234,19 @@ class _JournalScreenState extends State<JournalScreen> {
             _loadDayNote();
           },
           onLongPress: () => _showEmojiPicker(dateKey, day),
+          onSecondaryTapUp: (_) => _showEmojiPicker(dateKey, day),
           child: Container(
             margin: const EdgeInsets.all(3),
             decoration: BoxDecoration(
               color: isSelected
                   ? Theme.of(context).colorScheme.primary
-                  : context.nPanel2,
+                  : hasNote
+                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)
+                      : context.nPanel2,
               borderRadius: BorderRadius.circular(8),
+              border: hasNote && !isSelected
+                  ? Border.all(color: Theme.of(context).colorScheme.primary, width: 1)
+                  : null,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -238,12 +256,14 @@ class _JournalScreenState extends State<JournalScreen> {
                   style: TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: hasNote ? FontWeight.w600 : FontWeight.w500,
                     color: isToday
                         ? Colors.blue
                         : isSelected
                             ? Theme.of(context).colorScheme.onPrimary
-                            : context.nText,
+                            : hasNote
+                                ? Theme.of(context).colorScheme.primary
+                                : context.nText,
                   ),
                 ),
                 const SizedBox(height: 2),

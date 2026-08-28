@@ -675,38 +675,7 @@ class GitHubSyncService {
   static Future<void> _pushEmojis(String token, String repo) async {
     final emojis = SettingsService.allEmojis;
     final content = jsonEncode(emojis);
-    final encoded = base64.encode(utf8.encode(content));
-
-    String? existingSha;
-    try {
-      final response = await http.get(
-        Uri.parse('$_apiBase/repos/$repo/contents/emojis.json'),
-        headers: {
-          'Authorization': 'token $token',
-          'Accept': 'application/vnd.github.v3+json',
-        },
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        existingSha = data['sha'] as String?;
-      }
-    } catch (_) {}
-
-    final body = <String, dynamic>{
-      'message': 'update: emojis',
-      'content': encoded,
-    };
-    if (existingSha != null) body['sha'] = existingSha;
-
-    await http.put(
-      Uri.parse('$_apiBase/repos/$repo/contents/emojis.json'),
-      headers: {
-        'Authorization': 'token $token',
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(body),
-    );
+    await _pushFile(token, repo, 'emojis.json', content, message: 'update: emojis');
   }
 }
 

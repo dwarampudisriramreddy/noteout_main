@@ -64,6 +64,49 @@ class SettingsService {
     _box.put('githubRepo', value);
   }
 
+  static String get userName => _box.get('userName') ?? '';
+
+  static set userName(String value) {
+    _box.put('userName', value);
+  }
+
+  static String get siteAbout => _box.get('siteAbout') ?? '';
+
+  static set siteAbout(String value) {
+    _box.put('siteAbout', value);
+  }
+
+  static String get siteLayout => _box.get('siteLayout') ?? 'personal';
+
+  static set siteLayout(String value) {
+    _box.put('siteLayout', value);
+  }
+
+  static String get siteAccent => _box.get('siteAccent') ?? 'indigo';
+
+  static set siteAccent(String value) {
+    _box.put('siteAccent', value);
+  }
+
+  static bool get siteShowCalendar =>
+      _box.get('siteShowCalendar') != '0';
+
+  static set siteShowCalendar(bool value) {
+    _box.put('siteShowCalendar', value ? '1' : '0');
+  }
+
+  static bool get siteShowProfile => _box.get('siteShowProfile') != '0';
+
+  static set siteShowProfile(bool value) {
+    _box.put('siteShowProfile', value ? '1' : '0');
+  }
+
+  static String get profileImagePath => _box.get('profileImagePath') ?? '';
+
+  static set profileImagePath(String value) {
+    _box.put('profileImagePath', value);
+  }
+
   static bool get hasSkippedOnboarding => onboardedNotifier.value;
 
   static set hasSkippedOnboarding(bool value) {
