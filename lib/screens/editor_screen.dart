@@ -56,6 +56,12 @@ class _EditorScreenState extends State<EditorScreen> {
     }
     setState(() {
       _note = note;
+      final isJournal = note.title.toLowerCase().startsWith('journal:');
+      final requiredTag = isJournal ? 'journal' : 'note';
+      if (!_note!.tags.contains(requiredTag)) {
+        _note = _note!.copyWith(tags: [..._note!.tags, requiredTag]);
+      }
+      
       _titleController.text = note.title;
       _contentController.text = note.content;
       _isLoading = false;
