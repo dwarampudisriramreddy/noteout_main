@@ -249,15 +249,19 @@ class _NoteListScreenState extends State<NoteListScreen> {
               ),
             ),
             const SizedBox(height: 2),
-            Text(
-              SettingsService.userName.isEmpty ? 'get your thoughts out' : 'get your thoughts out, ${SettingsService.userName}',
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 9,
-                fontWeight: FontWeight.w400,
-                color: Colors.grey,
-                letterSpacing: 0.5,
-                height: 1.0,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                SettingsService.userName.isEmpty ? 'get your thoughts out' : 'get your thoughts out, ${SettingsService.userName}',
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 8.5,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.grey,
+                  letterSpacing: 0,
+                  height: 1.0,
+                ),
               ),
             ),
           ],
