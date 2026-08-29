@@ -167,7 +167,7 @@ class _GraphScreenState extends State<GraphScreen>
                           painter: _EdgePainter(
                             edges: _edges,
                             positions: _positions,
-                            lineColor: context.nLine,
+                            lineColor: context.nMuted,
                           ),
                         ),
                         for (final node in _nodes)
@@ -256,8 +256,9 @@ class _EdgePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = lineColor
-      ..strokeWidth = 0.8
-      ..style = PaintingStyle.stroke;
+      ..strokeWidth = 1.8
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
 
     for (final edge in edges) {
       final from = positions[edge.source];

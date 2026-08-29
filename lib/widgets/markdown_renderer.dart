@@ -295,6 +295,11 @@ class _KeyedHeadingBuilder extends MarkdownElementBuilder {
   _KeyedHeadingBuilder(this.keys);
 
   @override
+  Widget? visitText(md.Text text, TextStyle? preferredStyle) {
+    return SelectableText(text.text, style: preferredStyle);
+  }
+
+  @override
   Widget? visitElementAfterWithContext(
     BuildContext context,
     md.Element element,
