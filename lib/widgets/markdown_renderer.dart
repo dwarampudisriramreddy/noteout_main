@@ -301,11 +301,14 @@ class _KeyedHeadingBuilder extends MarkdownElementBuilder {
     TextStyle? preferredStyle,
     TextStyle? parentStyle,
   ) {
-    final key = keys[element.textContent.trim()];
-    if (key == null) return null;
+    final text = element.textContent.trim();
+    final key = keys.putIfAbsent(text, () => GlobalKey());
     return KeyedSubtree(
       key: key,
-      child: SelectableText(element.textContent, style: preferredStyle),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 16, bottom: 8),
+        child: SelectableText(text, style: preferredStyle),
+      ),
     );
   }
 }

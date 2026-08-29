@@ -1,4 +1,7 @@
-import 'package:flutter/material.dart';
+import re
+
+def process_file(path):
+    content = """import 'package:flutter/material.dart';
 import 'package:emojis/emojis.dart';
 import 'package:emojis/emoji.dart';
 import '../theme/app_theme.dart';
@@ -52,10 +55,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
   List<String> _filteredEmojis() {
     if (_query.isNotEmpty) {
       final queryLower = _query.toLowerCase();
-      return Emoji.all()
-          .where((e) => e.name.toLowerCase().contains(queryLower) || e.shortName.toLowerCase().contains(queryLower))
-          .map((e) => e.char)
-          .toList();
+      return Emoji.byKeyword(queryLower).map((e) => e.char).toList();
     }
     return Emoji.byGroup(_categories[_selectedCategory].group).map((e) => e.char).toList();
   }
@@ -199,3 +199,9 @@ class _EmojiPickerState extends State<EmojiPicker> {
     );
   }
 }
+"""
+    with open(path, 'w') as f:
+        f.write(content)
+
+process_file('lib/widgets/emoji_picker.dart')
+print("Patched emoji picker.")

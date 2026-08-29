@@ -599,7 +599,7 @@ class _NoteListScreenState extends State<NoteListScreen> {
           builder: (ctx) => AlertDialog(
             title: const Text('Delete note',
                 style: TextStyle(fontFamily: 'monospace')),
-            content: const Text('Move to trash?',
+            content: const Text('do you want to delete?',
                 style: TextStyle(fontFamily: 'monospace')),
             actions: [
               TextButton(

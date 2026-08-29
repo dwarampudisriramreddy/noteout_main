@@ -40,6 +40,7 @@
       min-height: 100%;
       background-color: #FFFFFF;
           background-size: 100% 100%;
+      -webkit-touch-callout: none;
     }
 
     .center {
@@ -143,4 +144,7 @@
   </noscript>
 
 
+  <script>
+    document.addEventListener('contextmenu', event => event.preventDefault());
+  </script>
 </body></html>

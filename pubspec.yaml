@@ -27,6 +27,7 @@ dependencies:
   file_picker: ^10.3.10
   flutter_image_compress: ^2.5.1
   flutter_svg: ^2.3.0
+  emojis: ^3.2.0
 
 dev_dependencies:
   flutter_test:

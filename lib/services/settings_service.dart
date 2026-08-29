@@ -114,6 +114,12 @@ class SettingsService {
     _box.put('onboardedSkipped', value ? '1' : '0');
   }
 
+static bool get hasCreatedReadme => _box.get('hasCreatedReadme') == '1';
+
+  static set hasCreatedReadme(bool value) {
+    _box.put('hasCreatedReadme', value ? '1' : '0');
+  }
+
   static String getEmoji(String date) => _emojiBox.get(date) ?? '';
 
   static void setEmoji(String date, String emoji) {

@@ -11,6 +11,7 @@ import '../services/storage_service.dart';
 import '../services/github_sync_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/markdown_renderer.dart';
+import '../widgets/markdown_controller.dart';
 
 class EditorScreen extends StatefulWidget {
   final String noteId;
@@ -21,17 +22,19 @@ class EditorScreen extends StatefulWidget {
   State<EditorScreen> createState() => _EditorScreenState();
 }
 
+enum EditorMode { edit, live, preview }
+
 class _EditorScreenState extends State<EditorScreen> {
   Note? _note;
   List<Note> _allNotes = [];
   String? _linkQuery;
   final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
+  final _contentController = MarkdownController();
   final _titleFocus = FocusNode();
   final _contentFocus = FocusNode();
   final _scrollController = ScrollController();
   bool _isLoading = true;
-  bool _isPreview = false;
+  EditorMode _mode = EditorMode.live;
   final _headingKeys = <String, GlobalKey>{};
 
   @override
@@ -180,13 +183,7 @@ class _EditorScreenState extends State<EditorScreen> {
               onPressed: _showToc,
               tooltip: 'table of contents',
             ),
-            IconButton(
-              icon: Icon(
-                _isPreview ? Icons.edit_outlined : Icons.visibility_outlined,
-                size: 18,
-              ),
-              onPressed: () => setState(() => _isPreview = !_isPreview),
-            ),
+
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_horiz, size: 18),
               onSelected: (value) async {
@@ -226,10 +223,10 @@ class _EditorScreenState extends State<EditorScreen> {
         body: Column(
           children: [
             Expanded(
-              child: _isPreview ? _buildPreview() : _buildEditor(),
+              child: _mode == EditorMode.preview ? _buildPreview() : _buildEditor(),
             ),
             if (_linkQuery != null) _buildLinkSuggestions(),
-            if (!_isPreview) _buildToolbar(),
+            if (_mode != EditorMode.preview) _buildToolbar(),
           ],
         ),
       ),
@@ -246,8 +243,9 @@ class _EditorScreenState extends State<EditorScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _modeButton('edit', !_isPreview),
-          _modeButton('preview', _isPreview),
+          _modeButton('edit', _mode == EditorMode.edit),
+          _modeButton('live', _mode == EditorMode.live),
+          _modeButton('preview', _mode == EditorMode.preview),
         ],
       ),
     );
@@ -257,7 +255,11 @@ class _EditorScreenState extends State<EditorScreen> {
     return GestureDetector(
       onTap: () {
         setState(() {
-          _isPreview = label == 'preview';
+          if (label == 'preview') _mode = EditorMode.preview;
+          else if (label == 'live') _mode = EditorMode.live;
+          else _mode = EditorMode.edit;
+          
+          _contentController.enableHighlighting = _mode == EditorMode.live;
         });
       },
       child: Container(
@@ -662,7 +664,6 @@ code block
   Widget _buildPreview() {
     final title = _titleController.text.trim();
     final content = _contentController.text;
-    _headingKeys.clear();
 
     return SingleChildScrollView(
       controller: _scrollController,
@@ -1153,7 +1154,7 @@ code block
   }
 
   void _jumpToTitle() {
-    if (!_isPreview) setState(() => _isPreview = true);
+    if (_mode != EditorMode.preview) setState(() => _mode = EditorMode.preview);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -1166,7 +1167,7 @@ code block
   }
 
   void _jumpToHeading(String text) {
-    if (!_isPreview) setState(() => _isPreview = true);
+    if (_mode != EditorMode.preview) setState(() => _mode = EditorMode.preview);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final ctx = _headingKeys[text]?.currentContext;
       if (ctx != null) {
@@ -1238,7 +1239,7 @@ code block
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete note'),
-        content: const Text('Move to trash?'),
+        content: const Text('do you want to delete?'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
