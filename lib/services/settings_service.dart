@@ -1,3 +1,4 @@
+import 'dart:convert' show jsonDecode, jsonEncode;
 import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:hive_ce/hive.dart';
@@ -128,4 +129,18 @@ static bool get hasCreatedReadme => _box.get('hasCreatedReadme') == '1';
 
   static Map<String, String> get allEmojis =>
       Map<String, String>.from(_emojiBox.toMap());
+
+  static List<String> get galleryFavs {
+    final raw = _box.get('galleryFavs') ?? '';
+    if (raw.isEmpty) return const [];
+    try {
+      return List<String>.from(jsonDecode(raw) as List);
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  static set galleryFavs(List<String> urls) {
+    _box.put('galleryFavs', jsonEncode(urls));
+  }
 }

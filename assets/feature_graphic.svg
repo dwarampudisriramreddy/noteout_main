@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500" fill="none">
+  <defs>
+    <radialGradient id="bg" cx="46%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#1a1a21"/>
+      <stop offset="100%" stop-color="#111113"/>
+    </radialGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#191920"/>
+      <stop offset="100%" stop-color="#14141a"/>
+    </linearGradient>
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="20" stdDeviation="26" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="500" fill="#111113"/>
+  <rect width="1024" height="500" fill="url(#bg)"/>
+
+  <!-- Decorative rings, top-right -->
+  <circle cx="1000" cy="430" r="380" fill="none" stroke="#1e1e26" stroke-width="1.5"/>
+  <circle cx="1000" cy="430" r="310" fill="none" stroke="#191921" stroke-width="1.5"/>
+
+  <!-- Graph panel (right) -->
+  <g>
+    <rect x="640" y="64" width="340" height="392" rx="20" fill="url(#panel)" stroke="#26262e" stroke-width="1.5"/>
+    <!-- edges -->
+    <g stroke="#ffffff" stroke-opacity="0.16" stroke-width="2">
+      <line x1="700" y1="150" x2="810" y2="120"/>
+      <line x1="700" y1="150" x2="780" y2="240"/>
+      <line x1="700" y1="150" x2="710" y2="330"/>
+      <line x1="810" y1="120" x2="890" y2="170"/>
+      <line x1="780" y1="240" x2="890" y2="170"/>
+      <line x1="780" y1="240" x2="900" y2="290"/>
+      <line x1="780" y1="240" x2="710" y2="330"/>
+      <line x1="890" y1="170" x2="900" y2="290"/>
+      <line x1="890" y1="170" x2="966" y2="240"/>
+      <line x1="900" y1="290" x2="966" y2="240"/>
+    </g>
+    <!-- nodes -->
+    <circle cx="810" cy="120" r="5" fill="#d8d8de"/>
+    <circle cx="890" cy="170" r="5" fill="#d8d8de"/>
+    <circle cx="710" cy="330" r="5" fill="#d8d8de"/>
+    <circle cx="900" cy="290" r="6" fill="#e8e8ee"/>
+    <circle cx="780" cy="240" r="9" fill="#ffffff"/>
+    <circle cx="700" cy="150" r="7" fill="#ffffff"/>
+    <circle cx="966" cy="240" r="13" fill="#4ade80" fill-opacity="0.16"/>
+    <circle cx="966" cy="240" r="7" fill="#4ade80"/>
+    <!-- corner ticks -->
+    <circle cx="666" cy="90" r="2" fill="#3a3a44"/>
+    <circle cx="948" cy="430" r="2" fill="#3a3a44"/>
+  </g>
+  <text x="654" y="478" font-family="DejaVu Sans Mono, monospace" font-size="14" fill="#62626e">graph</text>
+
+  <!-- Note card (overlaps panel's left edge) -->
+  <g filter="url(#shadow)">
+    <rect x="600" y="110" width="300" height="320" rx="22" fill="#ffffff"/>
+    <!-- title -->
+    <text x="624" y="157" font-family="DejaVu Sans, sans-serif" font-weight="bold" font-size="24" fill="#141414">title ideas</text>
+    <!-- live badge -->
+    <circle cx="864" cy="152" r="4" fill="#4ade80"/>
+    <text x="874" y="156" font-family="DejaVu Sans Mono, monospace" font-size="11" fill="#25a045">live</text>
+    <rect x="624" y="178" width="252" height="1.5" fill="#ececec"/>
+    <!-- markdown format demo -->
+    <text x="624" y="210" font-family="DejaVu Sans Mono, monospace" font-weight="bold" font-size="17" fill="#141414"># tags</text>
+    <text x="624" y="236" font-family="DejaVu Sans Mono, monospace" font-size="15" fill="#3c3c44">**bold** text</text>
+    <text x="624" y="258" font-family="DejaVu Sans Mono, monospace" font-size="15" fill="#3c3c44">`code`</text>
+    <text x="624" y="280" font-family="DejaVu Sans Mono, monospace" font-size="15" fill="#3c3c44">[link](url)</text>
+    <text x="624" y="302" font-family="DejaVu Sans Mono, monospace" font-size="15" fill="#3c3c44">- [ ] todo</text>
+    <rect x="624" y="320" width="180" height="8" rx="4" fill="#ececec"/>
+    <rect x="624" y="336" width="120" height="8" rx="4" fill="#ececec"/>
+    <text x="624" y="362" font-family="DejaVu Sans Mono, monospace" font-size="15" fill="#25a045">[[wiki notes]]</text>
+    <text x="624" y="384" font-family="DejaVu Sans Mono, monospace" font-size="15" fill="#3c3c44">$E = mc^2$</text>
+    <rect x="624" y="400" width="2" height="12" fill="#141414"/>
+  </g>
+
+  <!-- Left: logo mark -->
+  <g>
+    <rect x="68" y="52" width="96" height="96" rx="22" fill="#ffffff"/>
+    <rect x="78" y="62" width="76" height="76" rx="14" fill="#e8e8e8"/>
+    <rect x="86" y="78" width="58" height="5" rx="2.5" fill="#c9c9c9"/>
+    <rect x="86" y="92" width="46" height="5" rx="2.5" fill="#c9c9c9"/>
+    <rect x="86" y="106" width="52" height="5" rx="2.5" fill="#c9c9c9"/>
+    <rect x="86" y="120" width="34" height="5" rx="2.5" fill="#c9c9c9"/>
+  </g>
+
+  <!-- Wordmark + tagline -->
+  <text x="184" y="120" font-family="DejaVu Sans, sans-serif" font-weight="bold" font-size="64" fill="#ffffff">noteout</text>
+  <rect x="188" y="136" width="196" height="4" rx="2" fill="#4ade80"/>
+  <text x="188" y="172" font-family="DejaVu Sans Mono, monospace" font-size="18" fill="#9ea0aa">get your thoughts out</text>
+
+  <!-- Feature chips -->
+  <rect x="68" y="388" width="81" height="44" rx="22" fill="#16161c" stroke="#2a2a32" stroke-width="1.5"/>
+  <text x="86" y="416" font-family="DejaVu Sans Mono, monospace" font-size="15" fill="#cfcfd5">notes</text>
+  <rect x="161" y="388" width="99" height="44" rx="22" fill="#16161c" stroke="#2a2a32" stroke-width="1.5"/>
+  <text x="179" y="416" font-family="DejaVu Sans Mono, monospace" font-size="15" fill="#cfcfd5">journal</text>
+  <rect x="272" y="388" width="153" height="44" rx="22" fill="#16161c" stroke="#2a2a32" stroke-width="1.5"/>
+  <text x="290" y="416" font-family="DejaVu Sans Mono, monospace" font-size="15" fill="#cfcfd5">mood calendar</text>
+  <rect x="437" y="388" width="144" height="44" rx="22" fill="#16161c" stroke="#2a2a32" stroke-width="1.5"/>
+  <text x="455" y="416" font-family="DejaVu Sans Mono, monospace" font-size="15" fill="#cfcfd5">publish site</text>
+</svg>
