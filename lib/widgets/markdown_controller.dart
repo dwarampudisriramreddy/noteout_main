@@ -1,4 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+/// Makes Enter behave like an outliner when the previous line is a list item:
+/// it starts a new item at the same nesting level. Pressing Enter on an empty
+/// item walks back up one level (and ends the list at the top level).
+class NestedListInputFormatter extends TextInputFormatter {
+  static final _itemPattern = RegExp(r'^(\s*)([-*+]|\d+\.)\s+(.*)$');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.length != oldValue.text.length + 1) return newValue;
+
+    int oldIdx = 0;
+    int newIdx = 0;
+    while (oldIdx < oldValue.text.length &&
+        newIdx < newValue.text.length &&
+        oldValue.text.codeUnitAt(oldIdx) == newValue.text.codeUnitAt(newIdx)) {
+      oldIdx++;
+      newIdx++;
+    }
+    final inserted = newValue.text.substring(newIdx);
+    final rest = oldValue.text.substring(oldIdx);
+    if (inserted.length != rest.length + 1 || !inserted.endsWith(rest)) {
+      return newValue;
+    }
+    final addedChar = inserted.substring(0, inserted.length - rest.length);
+    if (addedChar != '\n') return newValue;
+
+    final before = newValue.text.substring(0, newIdx);
+    final lineStart = before.lastIndexOf('\n') + 1;
+    final prevLine = before.substring(lineStart);
+    final match = _itemPattern.firstMatch(prevLine);
+    if (match == null) return newValue;
+
+    final indent = match.group(1)!;
+    final marker = match.group(2)!;
+    final afterText = match.group(3)!;
+
+    String nextMarker;
+    if (RegExp(r'^\d+\.$').hasMatch(marker)) {
+      final number = int.parse(marker.substring(0, marker.length - 1));
+      nextMarker = '${number + 1}.';
+    } else {
+      nextMarker = marker;
+    }
+
+    String insertion;
+    if (afterText.trim().isEmpty) {
+      final parentIndent =
+          indent.length >= 2 ? indent.substring(0, indent.length - 2) : '';
+      insertion = parentIndent.isEmpty ? '' : '$parentIndent$nextMarker ';
+    } else {
+      insertion = '$indent$nextMarker ';
+    }
+
+    final text = newValue.text;
+    final reworked =
+        text.substring(0, newIdx + 1) + insertion + text.substring(newIdx + 1);
+    return TextEditingValue(
+      text: reworked,
+      selection: TextSelection.collapsed(offset: newIdx + 1 + insertion.length),
+    );
+  }
+}
 
 class MarkdownController extends TextEditingController {
   MarkdownController({String? text}) : super(text: text);

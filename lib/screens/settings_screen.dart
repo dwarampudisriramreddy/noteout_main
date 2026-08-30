@@ -1,9 +1,13 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/github_auth_service.dart';
 import '../services/github_sync_service.dart';
+import '../services/md_import_service.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
@@ -186,6 +190,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
         mimeType: 'text/markdown',
         name: 'noteout-export.md',
       )],
+    );
+  }
+
+  Future<void> _importMarkdown() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['md', 'markdown', 'txt'],
+      );
+      if (result == null || result.files.isEmpty) return;
+      final f = result.files.first;
+      final bytes = f.bytes ??
+          (f.path != null ? await File(f.path!).readAsBytes() : null);
+      if (bytes == null) {
+        _showImportMessage('could not read file', Colors.red);
+        return;
+      }
+      final notes = MdImportService.parse(
+          utf8.decode(bytes, allowMalformed: true), f.name.split('.').first);
+      if (notes.isEmpty) {
+        _showImportMessage('no notes found in file', Colors.orange);
+        return;
+      }
+      for (final n in notes) {
+        await StorageService.saveNote(n.toNote());
+      }
+      final count = notes.length;
+      _showImportMessage(
+          'imported $count note${count == 1 ? '' : 's'}', Colors.black);
+    } catch (e) {
+      _showImportMessage('import failed: $e', Colors.red);
+    }
+  }
+
+  void _showImportMessage(String msg, Color bg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content:
+            Text(msg, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+        backgroundColor: bg,
+      ),
     );
   }
 
@@ -420,12 +466,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
           _buildSection(
-            'export',
+            'data',
             [
               _buildActionTile(
                 'export all notes',
                 'share as markdown file',
                 _exportAll,
+                false,
+              ),
+              _buildActionTile(
+                'import markdown',
+                'import notes from a .md file',
+                _importMarkdown,
                 false,
               ),
             ],

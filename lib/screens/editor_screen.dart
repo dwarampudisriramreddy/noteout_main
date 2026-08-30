@@ -116,6 +116,105 @@ class _EditorScreenState extends State<EditorScreen> {
     setState(() {});
   }
 
+  /// Offset of the item text (after indentation and an optional list marker).
+  int _contentStart(String line) {
+    final m = RegExp(r'^(\s*)((?:[-*+]|\d+\.)\s+)(.*)$').firstMatch(line);
+    if (m == null) {
+      var i = 0;
+      while (i < line.length && line[i] == ' ') {
+        i++;
+      }
+      return i;
+    }
+    return m.group(1)!.length + m.group(2)!.length;
+  }
+
+  /// Outliner-style indent/outdent for the current line (or every affected
+  /// line when a multi-line selection is active).
+  void _changeIndent(bool increase) {
+    final controller = _contentController;
+    final text = controller.text;
+    final sel = controller.selection;
+    if (!sel.isValid) return;
+
+    final lines = text.split('\n');
+
+    int lineIndexOf(int pos) {
+      int count = 0;
+      for (int i = 0; i < lines.length; i++) {
+        count += lines[i].length + 1;
+        if (pos < count) return i;
+      }
+      return lines.length - 1;
+    }
+
+    final first = lineIndexOf(sel.start);
+    final last = sel.isCollapsed ? first : lineIndexOf(sel.end);
+    if (last < first) return;
+
+    bool changed = false;
+    final newLines = List<String>.from(lines);
+    for (int i = first; i <= last; i++) {
+      final line = lines[i];
+      if (increase) {
+        if (line.trim().isEmpty) continue;
+        newLines[i] = '  $line';
+        changed = true;
+      } else {
+        if (line.startsWith('  ')) {
+          newLines[i] = line.substring(2);
+          changed = true;
+        }
+      }
+    }
+    if (!changed) return;
+
+    int acc = 0;
+    final oldStarts = <int>[];
+    for (final line in lines) {
+      oldStarts.add(acc);
+      acc += line.length + 1;
+    }
+    final startInner = sel.start - oldStarts[first];
+    final endInner = sel.end - oldStarts[last];
+
+    final newText = newLines.join('\n');
+    acc = 0;
+    final newStarts = <int>[];
+    for (final line in newLines) {
+      newStarts.add(acc);
+      acc += line.length + 1;
+    }
+
+    int anchor(int line, int inner, List<String> from) {
+      final oldLine = from[line];
+      final newLine = newLines[line];
+      final rel = inner - _contentStart(oldLine);
+      final anchored = rel <= 0 ? _contentStart(newLine) : _contentStart(newLine) + rel;
+      return anchored.clamp(0, newLine.length);
+    }
+    final newStart = newStarts[first] + anchor(first, startInner, lines);
+    final newEnd = newStarts[last] + anchor(last, endInner, lines);
+
+    controller.value = TextEditingValue(
+      text: newText,
+      selection: sel.isCollapsed
+          ? TextSelection.collapsed(offset: newStart)
+          : TextSelection(baseOffset: newStart, extentOffset: newEnd),
+    );
+    _contentFocus.requestFocus();
+    setState(() {});
+  }
+
+  KeyEventResult _handleEditorKey(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.tab) {
+      final shift = HardwareKeyboard.instance.isShiftPressed;
+      _changeIndent(!shift);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   String _stripAllTagLines(String text) {
     return text
         .replaceAllMapped(
@@ -409,20 +508,23 @@ class _EditorScreenState extends State<EditorScreen> {
           const SizedBox(height: 12),
           ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 300),
-            child: TextField(
-              controller: _contentController,
-              focusNode: _contentFocus,
-              maxLines: null,
-              keyboardType: TextInputType.multiline,
-              enableInteractiveSelection: true,
-              style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 13,
-                color: context.nText,
-                height: 1.7,
-              ),
-              decoration: InputDecoration(
-                hintText: '''start writing...
+            child: Focus(
+              onKeyEvent: _handleEditorKey,
+              child: TextField(
+                controller: _contentController,
+                focusNode: _contentFocus,
+                maxLines: null,
+                keyboardType: TextInputType.multiline,
+                enableInteractiveSelection: true,
+                inputFormatters: [NestedListInputFormatter()],
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 13,
+                  color: context.nText,
+                  height: 1.7,
+                ),
+                decoration: InputDecoration(
+                  hintText: '''start writing...
 
 # Heading 1
 ## Heading 2
@@ -453,19 +555,20 @@ code block
 \$\$
 \\int_a^b x^2 dx
 \$\$ for block math''',
-                hintStyle: TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 13,
-                  color: context.nFaint,
-                  height: 1.7,
+                  hintStyle: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    color: context.nFaint,
+                    height: 1.7,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
                 ),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
+                onChanged: (text) {
+                  _checkLinkAutocomplete(text);
+                  setState(() {});
+                },
               ),
-              onChanged: (text) {
-                _checkLinkAutocomplete(text);
-                setState(() {});
-              },
             ),
           ),
           const SizedBox(height: 100),
@@ -720,6 +823,14 @@ code block
               _toolButton(Icons.title, () => _insertAtCursor('## ')),
               _toolButton(
                   Icons.format_list_bulleted, () => _insertAtCursor('- ')),
+              _toolButton(
+                  Icons.format_indent_increase,
+                  () => _changeIndent(true),
+                  'indent (tab)'),
+              _toolButton(
+                  Icons.format_indent_decrease,
+                  () => _changeIndent(false),
+                  'outdent (shift+tab)'),
               _toolButton(Icons.format_quote, () => _insertAtCursor('> ')),
               _toolButton(Icons.functions, () => _insertMarkdown(r'$$', r'$$')),
               _toolButton(Icons.link, () => _insertMarkdown('[[', ']]')),

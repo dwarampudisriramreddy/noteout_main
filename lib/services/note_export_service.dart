@@ -55,11 +55,10 @@ class NoteExportService {
 
   static String _slug(String title) {
     var name = title
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^\w\s-]'), '')
-        .replaceAll(RegExp(r'\s+'), '-')
-        .replaceAll(RegExp(r'-+'), '-')
-        .replaceAll(RegExp(r'^-|-$'), '');
+        .replaceAll(RegExp(r'[\\/:*?"<>|]'), '')
+        .replaceAll(RegExp(r'\r|\n|\t'), ' ')
+        .trim()
+        .replaceAll(RegExp(r'\s+'), ' ');
     if (name.isEmpty) name = 'untitled';
     return name;
   }

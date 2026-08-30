@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:markdown/markdown.dart' as md;
+import 'package:url_launcher/url_launcher.dart';
+import '../models/note.dart';
 import '../screens/editor_screen.dart';
+import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
 
 class MarkdownRenderer extends StatelessWidget {
@@ -44,19 +47,49 @@ class MarkdownRenderer extends StatelessWidget {
 
   Widget _buildMarkdown(BuildContext context, String text) {
     return MarkdownBody(
-      data: text,
+      data: _convertWikiLinks(text),
       selectable: true,
       shrinkWrap: true,
       styleSheet: _styleSheet(context),
       extensionSet: md.ExtensionSet.gitHubFlavored,
       builders: _headingBuilders(),
-      onTapLink: (text, href, title) {
+      onTapLink: (text, href, title) async {
+        final target = ((href?.trim().isNotEmpty ?? false) ? href! : text).trim();
+        if (target.isEmpty) return;
+
+        final uri = Uri.tryParse(target);
+        if (uri != null && uri.hasScheme) {
+          if (uri.scheme == 'http' ||
+              uri.scheme == 'https' ||
+              uri.scheme == 'mailto') {
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            }
+            return;
+          }
+        }
+
+        // Otherwise the link points at a note: match by id, then by title.
+        Note? note = await StorageService.getNote(target);
+        note ??= await StorageService.getNoteByTitle(target);
+        if (note == null || !context.mounted) return;
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => EditorScreen(noteId: text)),
+          MaterialPageRoute(builder: (_) => EditorScreen(noteId: note!.id)),
         );
       },
     );
+  }
+
+  /// Turns `[[Note Title]]` into a real link (keeping the brackets), so
+  /// note-to-note links open the target note when tapped.
+  String _convertWikiLinks(String text) {
+    final wikiPattern =
+        RegExp(r'(?<!`)' r'\[\[([^\]]+)\]\]');
+    return text.replaceAllMapped(wikiPattern, (match) {
+      final title = match.group(1)!;
+      return '[[$title]]($title)';
+    });
   }
 
   Map<String, MarkdownElementBuilder> _headingBuilders() {
