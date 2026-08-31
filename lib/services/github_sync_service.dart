@@ -40,8 +40,10 @@ class GitHubSyncService {
 
     final remoteFiles = await _listRemoteDir(token, repo, 'notes');
     final remoteBySha = <String, Map<String, dynamic>>{};
+    final remoteByPath = <String, Map<String, dynamic>>{};
     for (final file in remoteFiles) {
       remoteBySha[file['sha'] as String] = file;
+      remoteByPath[file['path'] as String] = file;
     }
 
     final localNotes = await StorageService.getAllNotes();
@@ -53,13 +55,18 @@ class GitHubSyncService {
           ? remoteBySha[localNote.githubSha]
           : null;
 
-      if (remoteMatch == null) {
-        await _pushNote(token, repo, localNote);
-        synced++;
-      } else {
-        await _pushNote(token, repo, localNote,
-            sha: remoteMatch['sha'] as String?);
-        synced++;
+      // A note created on another device has a null githubSha even though a
+      // file with the same path may already exist remotely (matched by slug).
+      // Pass that file's sha so the contents API updates it instead of
+      // failing with 422 "sha wasn't supplied".
+      final path = _notePath(localNote);
+      final sha = remoteMatch?['sha'] as String? ??
+          remoteByPath[path]?['sha'] as String?;
+
+      await _pushNote(token, repo, localNote, sha: sha);
+      synced++;
+      if (sha != null) remoteByPath.remove(path);
+      if (remoteMatch != null) {
         remoteBySha.remove(localNote.githubSha);
       }
     }

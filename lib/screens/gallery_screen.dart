@@ -30,6 +30,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
   bool _favsOnly = false;
   bool _loading = true;
 
+  static const _untagged = '\u0000untagged';
+  String? _tagFilter;
+
   static const _imageExts = {
     '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.avif', '.bmp', '.ico',
   };
@@ -153,6 +156,70 @@ class _GalleryScreenState extends State<GalleryScreen> {
           ),
         ),
         actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.filter_list, size: 18),
+            tooltip: 'filter by tag',
+            onSelected: (value) => setState(
+                () => _tagFilter = value.isEmpty ? null : value),
+            itemBuilder: (context) {
+              final items = <PopupMenuEntry<String>>[];
+              items.add(CheckedPopupMenuItem<String>(
+                value: '',
+                checked: _tagFilter == null,
+                child: Row(
+                  children: [
+                    Icon(Icons.all_inclusive, size: 15, color: context.nMuted),
+                    const SizedBox(width: 8),
+                    const Text('all',
+                        style: TextStyle(
+                            fontFamily: 'monospace', fontSize: 12)),
+                  ],
+                ),
+              ));
+
+              final tags = <String>{};
+              var hasUntagged = false;
+              for (final item in _items) {
+                if (item.tags.isEmpty) {
+                  hasUntagged = true;
+                } else {
+                  tags.addAll(item.tags);
+                }
+              }
+              final sorted = tags.toList()..sort();
+              for (final tag in sorted) {
+                items.add(CheckedPopupMenuItem<String>(
+                  value: tag,
+                  checked: _tagFilter == tag,
+                  child: Row(
+                    children: [
+                      Icon(Icons.label, size: 15, color: context.nMuted),
+                      const SizedBox(width: 8),
+                      Text('#$tag',
+                          style: const TextStyle(
+                              fontFamily: 'monospace', fontSize: 12)),
+                    ],
+                  ),
+                ));
+              }
+              if (hasUntagged) {
+                items.add(CheckedPopupMenuItem<String>(
+                  value: _untagged,
+                  checked: _tagFilter == _untagged,
+                  child: Row(
+                    children: [
+                      Icon(Icons.label_off, size: 15, color: context.nMuted),
+                      const SizedBox(width: 8),
+                      const Text('untagged',
+                          style: TextStyle(
+                              fontFamily: 'monospace', fontSize: 12)),
+                    ],
+                  ),
+                ));
+              }
+              return items;
+            },
+          ),
           IconButton(
             icon: Icon(
               _favsOnly ? Icons.star : Icons.star_border,
@@ -189,13 +256,28 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   Widget _body() {
     final favs = _favs;
-    final visible = _items.where(
-        (item) => !_favsOnly || favs.contains(item.url)).toList();
+    final filter = _tagFilter;
+    final visible = _items.where((item) {
+      if (_favsOnly && !favs.contains(item.url)) return false;
+      if (filter != null) {
+        if (filter == _untagged) {
+          if (item.tags.isNotEmpty) return false;
+        } else if (!item.tags.contains(filter)) {
+          return false;
+        }
+      }
+      return true;
+    }).toList()
+      ..sort((a, b) => b.updated.compareTo(a.updated));
 
     if (visible.isEmpty) {
       return Center(
         child: Text(
-          _favsOnly ? 'no favorites yet' : 'no urls yet',
+          _favsOnly && _tagFilter != null
+              ? 'no favorites for this tag'
+              : _favsOnly
+                  ? 'no favorites yet'
+                  : 'no urls yet',
           style: TextStyle(
             fontFamily: 'monospace',
             fontSize: 12,
@@ -206,80 +288,31 @@ class _GalleryScreenState extends State<GalleryScreen> {
     }
 
     final rows = <Widget>[];
+    DateTime? groupDay;
+    var group = <_GalleryItem>[];
 
-    final byTag = <String, List<_GalleryItem>>{};
+    void flush() {
+      if (group.isEmpty) return;
+      rows.add(_dateHeader(_dateLabel(groupDay!), group.length));
+      for (var i = 0; i < group.length; i += 3) {
+        rows.add(_tileRow(group.sublist(
+            i, i + 3 > group.length ? group.length : i + 3)));
+      }
+      rows.add(const SizedBox(height: 10));
+      group = [];
+    }
+
     for (final item in visible) {
-      final tags =
-          item.tags.isEmpty ? const ['untagged'] : item.tags;
-      for (final tag in tags) {
-        (byTag[tag] ??= []).add(item);
-      }
+      final day = _day(item.created);
+      if (groupDay != null && day != groupDay) flush();
+      groupDay = day;
+      group.add(item);
     }
-    final tagOrder = byTag.keys.toList()..sort();
-    for (var t = 0; t < tagOrder.length; t++) {
-      final tag = tagOrder[t];
-      final items = byTag[tag]!
-        ..sort((a, b) => b.updated.compareTo(a.updated));
-      rows.add(_tagHeader(tag, items.length));
-
-      DateTime? groupDay;
-      var group = <_GalleryItem>[];
-      void flush() {
-        if (group.isEmpty) return;
-        rows.add(_dateHeader(_dateLabel(groupDay!), group.length));
-        for (var i = 0; i < group.length; i += 3) {
-          rows.add(_tileRow(group.sublist(
-              i, i + 3 > group.length ? group.length : i + 3)));
-        }
-        rows.add(const SizedBox(height: 10));
-        group = [];
-      }
-
-      for (final item in items) {
-        final day = _day(item.created);
-        if (groupDay != null && day != groupDay) flush();
-        groupDay = day;
-        group.add(item);
-      }
-      flush();
-      if (t < tagOrder.length - 1) {
-        rows.add(const SizedBox(height: 6));
-      }
-    }
+    flush();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 16),
       children: rows,
-    );
-  }
-
-  Widget _tagHeader(String tag, int count) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(6, 16, 6, 4),
-      child: Row(
-        children: [
-          Text(
-            tag.startsWith('#') ? tag : '#$tag',
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: context.nText,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: Divider(height: 1, color: context.nLine)),
-          const SizedBox(width: 8),
-          Text(
-            '$count',
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 11,
-              color: context.nFaint,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
