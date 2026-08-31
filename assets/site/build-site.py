@@ -33,6 +33,9 @@ ACCENTS = {
 
 LAYOUTS = ('personal', 'docs', 'simple')
 
+# Visual themes. 'modern' is the default look; others override the base CSS.
+THEMES = ('modern', 'minimalist', 'paper')
+
 
 def _to_bool(value, default=True):
     if isinstance(value, bool):
@@ -50,13 +53,23 @@ def accent_css(accent_key):
   --pc:{prim};
   --accent:{sec};
   --primary:var(--pc);
+  --primary-strong:{prim};
   --primary-soft:color-mix(in srgb, var(--pc) 12%, transparent);
   --ring:color-mix(in srgb, var(--pc) 22%, transparent);
 }}
 [data-theme=dark]{{
   --primary:color-mix(in srgb, var(--pc) 62%, white);
+  --primary-strong:color-mix(in srgb, var(--pc) 78%, white);
   --primary-soft:color-mix(in srgb, var(--pc) 20%, transparent);
 }}'''
+
+
+def theme_css(theme_key):
+    """CSS overrides for the chosen visual theme (empty for the default)."""
+    theme = (theme_key or 'modern').strip().lower()
+    if theme not in THEMES:
+        theme = 'modern'
+    return THEMES_CSS.get(theme, '')
 
 CSS = """
 :root{
@@ -249,6 +262,59 @@ body.nav-open .scrim{display:block}
   .topnav{display:none}
 }
 """
+
+# Per-theme CSS overrides, emitted after the base CSS + accent so cascade wins.
+THEMES_CSS = {
+    'minimalist': '''\
+:root{
+  --bg:#fafafa; --surface:#ffffff; --surface-2:#f4f4f5; --line:#e5e5e7;
+  --text:#18181b; --muted:#52525b; --faint:#a1a1aa;
+  --shadow-sm:none; --shadow:0 1px 2px rgba(16,20,40,.05);
+  --radius:8px;
+}
+[data-theme=dark]{
+  --bg:#0c0c0f; --surface:#141417; --surface-2:#1e1e23; --line:#28282e;
+  --text:#f4f4f5; --muted:#a1a1aa; --faint:#71717a;
+  --shadow-sm:none; --shadow:0 1px 2px rgba(0,0,0,.5);
+}
+.hero{background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:var(--radius);box-shadow:none}
+[data-theme=dark] .hero{background:var(--surface)}
+.hero::before,.hero::after{display:none}
+.hero h1{color:var(--text)}
+.hero .tag{color:var(--muted)}
+.hero .at{color:var(--faint)}
+.card{border-radius:var(--radius)}
+.card:hover{transform:none;box-shadow:var(--shadow-sm)}
+.snav a.active{background:var(--primary-soft);color:var(--primary)}
+.topnav a.active{background:var(--primary-soft)}
+.topbar{backdrop-filter:blur(10px);background:color-mix(in srgb,var(--surface) 86%,transparent)}
+.tblock{border-radius:12px}
+''',
+    'paper': '''\
+:root{
+  --bg:#f7f3ec; --surface:#fffdf8; --surface-2:#efe9dc; --line:#e1d7c4;
+  --text:#33291c; --muted:#83775f; --faint:#a89b80;
+  --shadow-sm:none; --shadow:0 6px 20px -12px rgba(80,60,30,.3);
+  --radius:10px;
+}
+[data-theme=dark]{
+  --bg:#171310; --surface:#211a13; --surface-2:#2c241b; --line:#3d3427;
+  --text:#efe6d7; --muted:#b1a58d; --faint:#8b7e64;
+  --shadow-sm:none; --shadow:0 6px 20px -10px rgba(0,0,0,.5);
+}
+h1.doctitle,.hero h1,.section,article h2,article h3,.card h3{font-family:Georgia,'Times New Roman',serif}
+.hero{background:linear-gradient(135deg,#8a5a33,#c2914f);color:#fffaf0}
+[data-theme=dark] .hero{background:linear-gradient(135deg,#6b4526,#9c7138)}
+.hero::before,.hero::after{background:rgba(255,250,240,.14)}
+.hero h1{color:#fffaf0}
+.hero .tag{color:rgba(255,250,240,.94)}
+.hero .at{color:rgba(255,250,240,.82)}
+.card{box-shadow:none}
+.card:hover{box-shadow:var(--shadow-sm)}
+article blockquote{border-left-color:#c2914f;background:var(--surface-2)}
+.tblock{border-radius:14px}
+''',
+}
 
 JS = """
 (function(){try{var t=localStorage.getItem('theme');if(t){document.documentElement.setAttribute('data-theme',t);}else{var d=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',d);}}catch(e){}})();
@@ -454,6 +520,10 @@ def get_config():
     if layout not in LAYOUTS:
         layout = 'personal'
 
+    theme = (config.get('theme') or 'modern').strip().lower()
+    if theme not in THEMES:
+        theme = 'modern'
+
     return {
         'name': name,
         'owner': owner,
@@ -461,6 +531,7 @@ def get_config():
         or 'my notes, published',
         'layout': layout,
         'accent': (config.get('accent') or 'indigo').strip(),
+        'theme': theme,
         'show_calendar': _to_bool(config.get('showCalendar'), True),
         'show_profile': _to_bool(config.get('showProfile'), True),
         'profile_img': profile_img,
@@ -569,7 +640,7 @@ def page_shell(title, body_html, active, tree_html, prefix=''):
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{{delimiters:[{{left:'$',right:'$',display:false}},{{left:'$$',right:'$$',display:true}}]}})"></script>
-  <style>{accent_css(cfg.get('accent'))}{CSS}</style>
+  <style>{CSS}{accent_css(cfg.get('accent'))}{theme_css(cfg.get('theme'))}</style>
 </head>
 <body>
   <div class="scrim" onclick="toggleNav()"></div>

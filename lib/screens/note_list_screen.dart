@@ -176,13 +176,14 @@ class _NoteListScreenState extends State<NoteListScreen> {
     );
   }
 
-  Future<void> _syncNow() async {
+  Future<void> _runSync(
+      Future<Map<String, dynamic>> Function() operation) async {
     if (_isSyncing || !GitHubSyncService.isConfigured) return;
     setState(() {
       _isSyncing = true;
     });
     try {
-      final result = await GitHubSyncService.syncAll();
+      final result = await operation();
       if (!mounted) return;
       final siteErr = result['error'] as String?;
       setState(() {
@@ -268,17 +269,27 @@ class _NoteListScreenState extends State<NoteListScreen> {
         ),
         centerTitle: false,
         actions: [
-          IconButton(
-            icon: _isSyncing
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 1.5, color: context.nText),
-                  )
-                : const Icon(Icons.sync, size: 20),
-            onPressed: _isSyncing ? null : _syncNow,
+          PopupMenuButton<String>(
             tooltip: 'sync',
+            onSelected: (value) => _runSync(
+                value == 'push'
+                    ? GitHubSyncService.pushAll
+                    : GitHubSyncService.pullAll),
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'push', child: Text('push notes')),
+              PopupMenuItem(value: 'pull', child: Text('pull notes')),
+            ],
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: _isSyncing
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 1.5, color: context.nText),
+                    )
+                  : const Icon(Icons.sync, size: 20),
+            ),
           ),
           _buildThemeToggle(),
 

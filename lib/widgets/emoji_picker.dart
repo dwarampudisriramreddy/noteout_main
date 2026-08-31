@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:emojis/emojis.dart';
 import 'package:emojis/emoji.dart';
 import '../theme/app_theme.dart';
 
@@ -30,6 +29,7 @@ class _EmojiPickerState extends State<EmojiPicker> {
   String _query = '';
   int _selectedCategory = 0;
   final _searchController = TextEditingController();
+  final _customController = TextEditingController();
 
   static const _categories = [
     _Category('smileys', '😀', EmojiGroup.smileysEmotion),
@@ -46,7 +46,15 @@ class _EmojiPickerState extends State<EmojiPicker> {
   @override
   void dispose() {
     _searchController.dispose();
+    _customController.dispose();
     super.dispose();
+  }
+
+  void _submitCustom(String text) {
+    final value = text.trim();
+    if (value.isEmpty) return;
+    widget.onSelected(value);
+    Navigator.pop(context);
   }
 
   List<String> _filteredEmojis() {
@@ -132,6 +140,49 @@ class _EmojiPickerState extends State<EmojiPicker> {
               ),
             ),
           const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Icon(Icons.keyboard_alt_outlined,
+                    size: 16, color: context.nFaint),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _customController,
+                    onSubmitted: _submitCustom,
+                    textInputAction: TextInputAction.done,
+                    maxLines: 1,
+                    style:
+                        const TextStyle(fontFamily: 'monospace', fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'type a custom emoji / text',
+                      hintStyle: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        color: context.nFaint,
+                      ),
+                      filled: true,
+                      fillColor: context.nPanel2,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  tooltip: 'use',
+                  onPressed: () => _submitCustom(_customController.text),
+                  icon: Icon(Icons.check, size: 18, color: context.nText),
+                ),
+              ],
+            ),
+          ),
           if (_query.isEmpty && widget.selected.isNotEmpty) ...[
             GestureDetector(
               onTap: () {

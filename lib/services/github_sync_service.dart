@@ -14,6 +14,17 @@ class GitHubSyncService {
   static bool get isConfigured => GitHubAuthService.isLoggedIn;
 
   static Future<Map<String, dynamic>> syncAll() async {
+    final push = await pushAll();
+    final pull = await pullAll();
+    return {
+      'count': (push['count'] as int) + (pull['count'] as int),
+      'error': push['error'] ?? pull['error'],
+    };
+  }
+
+  // Pushes local notes (plus emojis, site config and the site build files)
+  // to GitHub. Does not download anything.
+  static Future<Map<String, dynamic>> pushAll() async {
     if (!isConfigured) return {'count': 0, 'error': 'not configured'};
 
     final token = GitHubAuthService.token;
@@ -33,6 +44,10 @@ class GitHubSyncService {
     } catch (_) {}
 
     try {
+      await _pushSiteConfig(token, repo);
+    } catch (_) {}
+
+    try {
       await _ensureSiteFiles(token, repo);
     } catch (e) {
       siteError = '$e';
@@ -48,7 +63,7 @@ class GitHubSyncService {
 
     final localNotes = await StorageService.getAllNotes();
     final deletedNotes = await StorageService.getDeletedNotes();
-    int synced = 0;
+    int pushed = 0;
 
     for (final localNote in localNotes) {
       final remoteMatch = localNote.githubSha != null
@@ -64,30 +79,10 @@ class GitHubSyncService {
           remoteByPath[path]?['sha'] as String?;
 
       await _pushNote(token, repo, localNote, sha: sha);
-      synced++;
+      pushed++;
       if (sha != null) remoteByPath.remove(path);
       if (remoteMatch != null) {
         remoteBySha.remove(localNote.githubSha);
-      }
-    }
-
-    for (final entry in remoteBySha.entries) {
-      final parsed = await _readNoteFile(token, repo, entry.value);
-      if (parsed != null) {
-        final existingLocal =
-            await StorageService.getNote(parsed['id'] as String);
-        if (existingLocal == null) {
-          final note = Note(
-            id: parsed['id'] as String,
-            title: parsed['title'] as String? ?? '',
-            content: parsed['content'] as String? ?? '',
-            createdAt: parsed['created'] as DateTime?,
-            githubSha: entry.key,
-            githubModifiedAt: DateTime.now().toUtc(),
-          );
-          await StorageService.saveNote(note);
-          synced++;
-        }
       }
     }
 
@@ -96,13 +91,53 @@ class GitHubSyncService {
         final remoteFile = remoteBySha[deleted.githubSha];
         if (remoteFile != null) {
           await _deleteFile(token, repo, remoteFile);
-          synced++;
+          pushed++;
         }
       }
     }
 
     SiteStatusMonitor.instance.refresh();
-    return {'count': synced, 'error': siteError};
+    return {'count': pushed, 'error': siteError};
+  }
+
+  // Pulls notes from GitHub that don't exist on this device yet.
+  // Does not upload anything.
+  static Future<Map<String, dynamic>> pullAll() async {
+    if (!isConfigured) return {'count': 0, 'error': 'not configured'};
+
+    final token = GitHubAuthService.token;
+    final username = GitHubAuthService.username;
+    final repoName = SettingsService.githubRepo;
+    final repo = '$username/$repoName';
+
+    try {
+      await _ensureRepo(token, repo);
+    } catch (e) {
+      return {'count': 0, 'error': 'repo setup: $e'};
+    }
+
+    final remoteFiles = await _listRemoteDir(token, repo, 'notes');
+    int pulled = 0;
+    for (final file in remoteFiles) {
+      final parsed = await _readNoteFile(token, repo, file);
+      if (parsed == null || parsed['id'] == null) continue;
+      final existingLocal =
+          await StorageService.getNote(parsed['id'] as String);
+      if (existingLocal != null) continue;
+      final note = Note(
+        id: parsed['id'] as String,
+        title: parsed['title'] as String? ?? '',
+        content: parsed['content'] as String? ?? '',
+        createdAt: parsed['created'] as DateTime?,
+        githubSha: file['sha'] as String?,
+        githubModifiedAt: DateTime.now().toUtc(),
+      );
+      await StorageService.saveNote(note);
+      pulled++;
+    }
+
+    SiteStatusMonitor.instance.refresh();
+    return {'count': pulled, 'error': null};
   }
 
   static Future<void> _ensureRepo(String token, String repo) async {
@@ -726,6 +761,25 @@ class GitHubSyncService {
     final emojis = SettingsService.allEmojis;
     final content = jsonEncode(emojis);
     await _pushFile(token, repo, 'emojis.json', content, message: 'update: emojis');
+  }
+
+  // pushes the site's config.json (name/about/layout/accent/theme/toggles) so
+  // the GitHub Actions build of build-site.py picks up the latest site
+  // settings. Previously config.json was never written, so site settings had
+  // no effect on the published site.
+  static Future<void> _pushSiteConfig(String token, String repo) async {
+    final config = jsonEncode({
+      'username': GitHubAuthService.username,
+      'name': SettingsService.userName,
+      'about': SettingsService.siteAbout,
+      'layout': SettingsService.siteLayout,
+      'accent': SettingsService.siteAccent,
+      'theme': SettingsService.siteTheme,
+      'showCalendar': SettingsService.siteShowCalendar,
+      'showProfile': SettingsService.siteShowProfile,
+    });
+    await _pushFile(token, repo, 'config.json', config,
+        message: 'update: site settings');
   }
 }
 

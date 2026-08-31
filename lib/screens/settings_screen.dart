@@ -128,10 +128,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  Future<void> _syncNow() async {
+  Future<void> _syncNow() => _runSync(GitHubSyncService.syncAll);
+
+  Future<void> _pushNow() => _runSync(GitHubSyncService.pushAll);
+
+  Future<void> _pullNow() => _runSync(GitHubSyncService.pullAll);
+
+  Future<void> _runSync(
+      Future<Map<String, dynamic>> Function() operation) async {
     setState(() => _isSyncing = true);
     try {
-      final result = await GitHubSyncService.syncAll();
+      final result = await operation();
       final count = result['count'] as int;
       final siteErr = result['error'] as String?;
       if (mounted) {
@@ -450,8 +457,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildStatusTile(),
                 _buildInfoTile('storage', _repoSize ?? 'loading…'),
                 _buildActionTile(
+                  'push notes',
+                  'send local notes to github',
+                  _isSyncing ? null : _pushNow,
+                  _isSyncing,
+                ),
+                _buildActionTile(
+                  'pull notes',
+                  'download notes from github',
+                  _isSyncing ? null : _pullNow,
+                  _isSyncing,
+                ),
+                _buildActionTile(
                   'sync now',
-                  _lastSyncResult ?? 'push/pull all notes',
+                  _lastSyncResult ?? 'push + pull in one go',
                   _isSyncing ? null : _syncNow,
                   _isSyncing,
                 ),

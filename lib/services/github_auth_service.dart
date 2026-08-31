@@ -47,6 +47,13 @@ class GitHubAuthService {
         final login = data['login'] as String? ?? '';
         if (login.isNotEmpty) {
           SettingsService.githubUsername = login;
+          // Auto-fill the display name from the GitHub profile when the user
+          // hasn't set one yet, so they don't have to type it.
+          final ghName = (data['name'] as String?)?.trim() ?? '';
+          if (SettingsService.userName.trim().isEmpty) {
+            SettingsService.userName =
+                ghName.isNotEmpty ? ghName : login;
+          }
           return TokenStatus.valid;
         }
       }

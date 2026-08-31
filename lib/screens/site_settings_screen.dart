@@ -30,6 +30,12 @@ class _SiteSettingsScreenState extends State<SiteSettingsScreen> {
     ('amber', Color(0xFFD97706)),
   ];
 
+  static const _themes = [
+    ('modern', 'modern', 'bold cards, vivid gradient hero'),
+    ('minimalist', 'minimalist', 'clean and airy, hairline edges, no shadows'),
+    ('paper', 'paper', 'warm cream + serif headings, like a blog'),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -64,7 +70,7 @@ class _SiteSettingsScreenState extends State<SiteSettingsScreen> {
     }
     setState(() => _isPublishing = true);
     try {
-      final result = await GitHubSyncService.syncAll();
+      final result = await GitHubSyncService.pushAll();
       final count = result['count'] as int;
       final siteErr = result['error'] as String?;
       final msg = siteErr != null
@@ -89,6 +95,7 @@ class _SiteSettingsScreenState extends State<SiteSettingsScreen> {
   Widget build(BuildContext context) {
     final layout = SettingsService.siteLayout;
     final accent = SettingsService.siteAccent;
+    final theme = SettingsService.siteTheme;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -187,6 +194,21 @@ class _SiteSettingsScreenState extends State<SiteSettingsScreen> {
                   ],
                 ),
               ),
+            ],
+          ),
+          _section('theme'),
+          _panel(
+            children: [
+              for (final (key, label, desc) in _themes)
+                _choiceRow(
+                  selected: theme == key,
+                  title: label,
+                  subtitle: desc,
+                  onTap: () {
+                    SettingsService.siteTheme = key;
+                    setState(() {});
+                  },
+                ),
             ],
           ),
           _section('home page'),

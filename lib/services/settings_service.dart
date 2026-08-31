@@ -89,6 +89,12 @@ class SettingsService {
     _box.put('siteAccent', value);
   }
 
+  static String get siteTheme => _box.get('siteTheme') ?? 'modern';
+
+  static set siteTheme(String value) {
+    _box.put('siteTheme', value);
+  }
+
   static bool get siteShowCalendar =>
       _box.get('siteShowCalendar') != '0';
 
