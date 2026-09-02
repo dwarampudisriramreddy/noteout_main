@@ -128,6 +128,7 @@ class GitHubSyncService {
         id: parsed['id'] as String,
         title: parsed['title'] as String? ?? '',
         content: parsed['content'] as String? ?? '',
+        tags: (parsed['tags'] as List?)?.cast<String>(),
         createdAt: parsed['created'] as DateTime?,
         githubSha: file['sha'] as String?,
         githubModifiedAt: DateTime.now().toUtc(),
@@ -375,7 +376,9 @@ class GitHubSyncService {
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final contentB64 = data['content'] as String? ?? '';
-      final decoded = utf8.decode(base64.decode(contentB64));
+      // GitHub wraps the b64 content with a newline every 60 chars; Dart's
+      // base64.decode rejects whitespace, so strip it first.
+      final decoded = utf8.decode(base64.decode(contentB64.replaceAll(RegExp(r'\s'), '')));
       final parsed = _parseNoteMarkdown(decoded);
 
       if (parsed['id'] != null) {
@@ -383,6 +386,7 @@ class GitHubSyncService {
           'id': parsed['id'],
           'title': parsed['title'],
           'content': parsed['content'],
+          'tags': parsed['tags'],
           'created': parsed['created'],
         };
       }
