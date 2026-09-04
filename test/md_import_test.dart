@@ -69,6 +69,32 @@ void main() {
       expect(notes.first.body, contains('content here'));
       expect(notes.first.body, contains('extra para'));
     });
+
+    test('single file with headings stays one note', () {
+      final raw = '# Intro\n\n'
+          'text one\n\n'
+          '# Second\n\n'
+          'text two\n';
+      final notes = MdImportService.parse(raw, 'file');
+      expect(notes.length, 1);
+      expect(notes.first.title, 'Intro');
+      expect(notes.first.body, contains('text one'));
+      expect(notes.first.body, contains('# Second'));
+      expect(notes.first.body, contains('text two'));
+    });
+
+    test('--- used as horizontal rule does not split the note', () {
+      final raw = '# Title\n\n'
+          'para one\n\n'
+          '---\n\n'
+          'para two\n';
+      final notes = MdImportService.parse(raw, 'file');
+      expect(notes.length, 1);
+      expect(notes.first.title, 'Title');
+      expect(notes.first.body, contains('para one'));
+      expect(notes.first.body, contains('---'));
+      expect(notes.first.body, contains('para two'));
+    });
   });
 
   group('NoteExportService', () {

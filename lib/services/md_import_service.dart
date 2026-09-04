@@ -22,50 +22,126 @@ class ImportedNote {
 }
 
 class MdImportService {
+  /// Parses a markdown file into one or more notes.
+  ///
+  /// A single plain markdown file — even one containing multiple `#` headings
+  /// or `---` horizontal rules — is imported as ONE note. Multiple notes are
+  /// only produced when the file uses titled front-matter blocks (the format
+  /// this app writes on bulk export), e.g.:
+  ///   ---
+  ///   title: Alpha
+  ///   ---
+  ///   ...body...
   static List<ImportedNote> parse(String raw, String fallbackTitle) {
+    final lines = raw.split('\n');
+    return _parseSections(_splitByFrontMatter(lines), fallbackTitle);
+  }
+
+  /// Splits the input into section line-groups. A new section starts only at a
+  /// titled front-matter block (`---` ... `title: ...` ... `---`), and the body
+  /// lines that follow it stay in the same section. Everything else — including
+  /// bare `---` horizontal rules — is kept as content.
+  static List<List<String>> _splitByFrontMatter(List<String> lines) {
+    final sections = <List<String>>[];
+    var i = 0;
+    while (i < lines.length) {
+      if (lines[i].trim() == '---' &&
+          _findFrontMatterEnd(lines, i + 1) != null) {
+        final end = _findFrontMatterEnd(lines, i + 1)!;
+        final section = <String>[];
+        section.addAll(lines.sublist(i, end + 1));
+        var j = end + 1;
+        final body = <String>[];
+        while (j < lines.length) {
+          if (lines[j].trim() == '---' &&
+              _findFrontMatterEnd(lines, j + 1) != null) {
+            break;
+          }
+          body.add(lines[j]);
+          j++;
+        }
+        section.addAll(body);
+        sections.add(section);
+        i = j;
+        continue;
+      }
+      final section = <String>[];
+      while (i < lines.length) {
+        if (lines[i].trim() == '---' &&
+            _findFrontMatterEnd(lines, i + 1) != null) {
+          break;
+        }
+        section.add(lines[i]);
+        i++;
+      }
+      sections.add(section);
+    }
+    return sections;
+  }
+
+  /// Given lines and the index right after an opening `---`, finds the index
+  /// of the matching closing `---` if the block parses as *titled* front
+  /// matter (contains a non-empty `title:`). Returns null otherwise.
+  static int? _findFrontMatterEnd(List<String> lines, int start) {
+    var foundTitle = false;
+    for (var j = start; j < lines.length; j++) {
+      final l = lines[j].trim();
+      if (l == '---') {
+        return foundTitle ? j : null;
+      }
+      if (l.startsWith('title:') && l.substring(6).trim().isNotEmpty) {
+        foundTitle = true;
+      }
+    }
+    return null;
+  }
+
+  static List<ImportedNote> _parseSections(
+      List<List<String>> sections, String fallbackTitle) {
     final notes = <ImportedNote>[];
-    ImportedNote? pending;
-    var piece = <String>[];
-    final pieces = <List<String>>[];
-    for (final line in raw.split('\n')) {
-      if (line.trim() == '---') {
-        pieces.add(piece);
-        piece = <String>[];
-      } else {
-        piece.add(line);
-      }
-    }
-    pieces.add(piece);
-    for (final p in pieces) {
-      final text = p.join('\n').trim();
-      if (text.isEmpty) continue;
-      final meta = _frontMatter(text);
+    for (final section in sections) {
+      final lines = section;
+      // Only the first section may be headed by front matter that sits at the
+      // very top of the file; we handle both leading front matter and body.
+      final meta = _frontMatter(lines);
       if (meta != null) {
-        if (pending != null) notes.add(pending);
-        pending = meta;
-      } else if (pending case final p?) {
-        pending = ImportedNote(
-          title: p.title,
-          body: p.body.isEmpty ? text : '${p.body}\n\n$text',
-          tags: p.tags,
-          created: p.created,
-        );
+        final bodyStart = _frontMatterBodyStart(lines);
+        final body = bodyStart == null
+            ? ''
+            : lines.sublist(bodyStart).join('\n').trim();
+        notes.add(ImportedNote(
+          title: meta.title,
+          body: body,
+          tags: meta.tags,
+          created: meta.created,
+        ));
       } else {
-        notes.add(_descNote(text, fallbackTitle));
+        final text = lines.join('\n').trim();
+        if (text.isNotEmpty) notes.add(_descNote(text, fallbackTitle));
       }
     }
-    if (pending != null) notes.add(pending);
     return notes;
   }
 
-  static ImportedNote? _frontMatter(String text) {
+  static ImportedNote? _frontMatter(List<String> lines) {
     String? title;
     DateTime? created;
     final tags = <String>[];
     var foundTitle = false;
-    for (final rawLine in text.split('\n')) {
-      final l = rawLine.trim();
-      if (l.isEmpty) continue;
+    // Front matter must start at the first line of the section.
+    var i = 0;
+    while (i < lines.length && lines[i].trim() == '') {
+      i++;
+    }
+    if (i >= lines.length || lines[i].trim() != '---') return null;
+    i++;
+    var closed = false;
+    for (; i < lines.length; i++) {
+      final l = lines[i].trim();
+      if (l == '---') {
+        closed = true;
+        break;
+      }
       if (l.startsWith('title:')) {
         foundTitle = true;
         var value = l.substring(6).trim();
@@ -87,8 +163,27 @@ class MdImportService {
         }
       }
     }
-    if (!foundTitle || title == null || title.isEmpty) return null;
+    if (!closed || !foundTitle || title == null || title.isEmpty) return null;
     return ImportedNote(title: title, body: '', created: created, tags: tags);
+  }
+
+  /// Returns the first line index strictly after the front-matter block, or
+  /// null if the section does not start with a titled front-matter block.
+  static int? _frontMatterBodyStart(List<String> lines) {
+    var i = 0;
+    while (i < lines.length && lines[i].trim() == '') {
+      i++;
+    }
+    if (i >= lines.length || lines[i].trim() != '---') return null;
+    i++;
+    var foundTitle = false;
+    for (; i < lines.length; i++) {
+      if (lines[i].trim() == '---') {
+        return foundTitle ? i + 1 : null;
+      }
+      if (lines[i].trim().startsWith('title:')) foundTitle = true;
+    }
+    return null;
   }
 
   static ImportedNote _descNote(String text, String fallbackTitle) {
