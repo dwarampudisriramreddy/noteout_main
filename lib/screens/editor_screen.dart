@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,7 +25,13 @@ class EditorScreen extends StatefulWidget {
 
 enum EditorMode { edit, live, preview }
 
-class _EditorScreenState extends State<EditorScreen> {
+class _Snapshot {
+  final String title;
+  final String content;
+  _Snapshot(this.title, this.content);
+}
+
+class _EditorScreenState extends State<EditorScreen> with WidgetsBindingObserver {
   Note? _note;
   List<Note> _allNotes = [];
   String? _linkQuery;
@@ -36,10 +43,15 @@ class _EditorScreenState extends State<EditorScreen> {
   bool _isLoading = true;
   EditorMode _mode = EditorMode.live;
   final _headingKeys = <String, GlobalKey>{};
+  Timer? _autoSaveTimer;
+  final _undoStack = <_Snapshot>[];
+  final _redoStack = <_Snapshot>[];
+  bool _applyingSnapshot = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadNote();
     _loadAllNotes();
   }
@@ -51,12 +63,66 @@ class _EditorScreenState extends State<EditorScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _autoSaveTimer?.cancel();
     _titleController.dispose();
     _contentController.dispose();
     _titleFocus.dispose();
     _contentFocus.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Save immediately when the app loses focus / is put in the background so
+    // edits aren't lost if the OS kills the process (common on Android).
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      _saveNote();
+    }
+  }
+
+  void _scheduleAutoSave() {
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer(const Duration(seconds: 2), _saveNote);
+  }
+
+  _Snapshot _takeSnapshot() =>
+      _Snapshot(_titleController.text, _contentController.text);
+
+  void _recordSnapshot() {
+    if (_applyingSnapshot) return;
+    _undoStack.add(_takeSnapshot());
+    _redoStack.clear();
+    // Cap at 200 to avoid unbounded memory use.
+    while (_undoStack.length > 200) _undoStack.removeAt(0);
+  }
+
+  void _undo() {
+    if (_undoStack.isEmpty || _applyingSnapshot) return;
+    _redoStack.add(_takeSnapshot());
+    final s = _undoStack.removeLast();
+    _applySnapshot(s);
+  }
+
+  void _redo() {
+    if (_redoStack.isEmpty || _applyingSnapshot) return;
+    _undoStack.add(_takeSnapshot());
+    final s = _redoStack.removeLast();
+    _applySnapshot(s);
+  }
+
+  void _applySnapshot(_Snapshot s) {
+    _applyingSnapshot = true;
+    _titleController.text = s.title;
+    _titleController.selection = TextSelection.collapsed(offset: s.title.length);
+    _contentController.text = s.content;
+    _contentController.selection =
+        TextSelection.collapsed(offset: s.content.length);
+    _applyingSnapshot = false;
+    setState(() {});
   }
 
   Future<void> _loadNote() async {
@@ -80,6 +146,7 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _insertMarkdown(String prefix, String suffix) {
+    _recordSnapshot();
     final text = _contentController.text;
     final selection = _contentController.selection;
     final start = selection.start.clamp(0, text.length);
@@ -100,6 +167,7 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _insertAtCursor(String text) {
+    _recordSnapshot();
     final current = _contentController.text;
     final selection = _contentController.selection;
     final start = selection.start.clamp(0, current.length);
@@ -132,6 +200,7 @@ class _EditorScreenState extends State<EditorScreen> {
   /// Outliner-style indent/outdent for the current line (or every affected
   /// line when a multi-line selection is active).
   void _changeIndent(bool increase) {
+    _recordSnapshot();
     final controller = _contentController;
     final text = controller.text;
     final sel = controller.selection;
@@ -211,6 +280,24 @@ class _EditorScreenState extends State<EditorScreen> {
       final shift = HardwareKeyboard.instance.isShiftPressed;
       _changeIndent(!shift);
       return KeyEventResult.handled;
+    }
+    if (event is KeyDownEvent) {
+      final ctrl = HardwareKeyboard.instance.isControlPressed;
+      final shift = HardwareKeyboard.instance.isShiftPressed;
+      if (ctrl && event.logicalKey == LogicalKeyboardKey.keyZ) {
+        if (shift) {
+          _redo();
+        } else {
+          _undo();
+        }
+        return KeyEventResult.handled;
+      }
+      if (ctrl &&
+          event.logicalKey == LogicalKeyboardKey.keyY &&
+          HardwareKeyboard.instance.isShiftPressed == false) {
+        _redo();
+        return KeyEventResult.handled;
+      }
     }
     return KeyEventResult.ignored;
   }
@@ -496,7 +583,10 @@ class _EditorScreenState extends State<EditorScreen> {
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
-            onChanged: (_) => setState(() {}),
+            onChanged: (_) {
+              setState(() {});
+              _scheduleAutoSave();
+            },
             onSubmitted: (_) => _contentFocus.requestFocus(),
           ),
           const SizedBox(height: 4),
@@ -567,6 +657,7 @@ code block
                 onChanged: (text) {
                   _checkLinkAutocomplete(text);
                   setState(() {});
+                  _scheduleAutoSave();
                 },
               ),
             ),
@@ -646,6 +737,7 @@ code block
   }
 
   void _removeTag(String tag) {
+    _recordSnapshot();
     setState(() {
       _note = _note!.copyWith(
         tags: _note!.tags.where((t) => t != tag).toList(),
@@ -745,6 +837,7 @@ code block
   }
 
   void _addTag(String rawTag) {
+    _recordSnapshot();
     var tag = rawTag
         .trim()
         .replaceAll(RegExp(r'\s+'), '/')
@@ -811,6 +904,13 @@ code block
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
+              _toolButton(Icons.undo, _undoStack.isEmpty ? null : _undo, 'undo',
+                  _undoStack.isEmpty),
+              _toolButton(Icons.redo, _redoStack.isEmpty ? null : _redo, 'redo',
+                  _redoStack.isEmpty),
+              const SizedBox(width: 4),
+              Container(width: 1, height: 16, color: context.nLine),
+              const SizedBox(width: 4),
               _toolButton(Icons.content_copy, () => _copySelection(), 'copy'),
               _toolButton(
                   Icons.content_paste, () => _pasteFromClipboard(), 'paste'),
@@ -1043,15 +1143,18 @@ code block
     );
   }
 
-  Widget _toolButton(IconData icon, VoidCallback onPressed, [String? tooltip]) {
+  Widget _toolButton(IconData icon, VoidCallback? onPressed,
+      [String? tooltip, bool disabled = false]) {
     return Tooltip(
       message: tooltip ?? '',
       child: SizedBox(
         width: 36,
         height: 36,
         child: IconButton(
-          icon: Icon(icon, size: 16, color: context.nMuted),
-          onPressed: onPressed,
+          icon: Icon(icon,
+              size: 16,
+              color: disabled ? context.nLine : context.nMuted),
+          onPressed: disabled ? null : onPressed,
           padding: EdgeInsets.zero,
         ),
       ),

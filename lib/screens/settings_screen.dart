@@ -21,7 +21,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _isSyncing = false;
+  String? _activeAction; // null = idle; 'push'/'pull'/'sync' = running
   bool _isLoggedIn = false;
   String? _lastSyncResult;
   bool _isLoggingIn = false;
@@ -128,15 +128,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  Future<void> _syncNow() => _runSync(GitHubSyncService.syncAll);
+  Future<void> _syncNow() => _runSync('sync', GitHubSyncService.syncAll);
 
-  Future<void> _pushNow() => _runSync(GitHubSyncService.pushAll);
+  Future<void> _pushNow() => _runSync('push', GitHubSyncService.pushAll);
 
-  Future<void> _pullNow() => _runSync(GitHubSyncService.pullAll);
+  Future<void> _pullNow() => _runSync('pull', GitHubSyncService.pullAll);
 
   Future<void> _runSync(
-      Future<Map<String, dynamic>> Function() operation) async {
-    setState(() => _isSyncing = true);
+      String action, Future<Map<String, dynamic>> Function() operation) async {
+    if (_activeAction != null) return;
+    setState(() => _activeAction = action);
     try {
       final result = await operation();
       final count = result['count'] as int;
@@ -146,7 +147,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ? '$count synced, site: $siteErr'
             : '$count note${count == 1 ? '' : 's'} synced';
         setState(() {
-          _isSyncing = false;
+          _activeAction = null;
           _lastSyncResult = msg;
         });
         ScaffoldMessenger.of(context).showSnackBar(
@@ -162,7 +163,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _isSyncing = false;
+          _activeAction = null;
           _lastSyncResult = 'Sync failed';
         });
         ScaffoldMessenger.of(context).showSnackBar(
@@ -459,25 +460,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildActionTile(
                   'push notes',
                   'send local notes to github',
-                  _isSyncing ? null : _pushNow,
-                  _isSyncing,
+                  _activeAction != null ? null : _pushNow,
+                  _activeAction == 'push',
                 ),
                 _buildActionTile(
                   'pull notes',
                   'download notes from github',
-                  _isSyncing ? null : _pullNow,
-                  _isSyncing,
+                  _activeAction != null ? null : _pullNow,
+                  _activeAction == 'pull',
                 ),
                 _buildActionTile(
                   'sync now',
                   _lastSyncResult ?? 'push + pull in one go',
-                  _isSyncing ? null : _syncNow,
-                  _isSyncing,
+                  _activeAction != null ? null : _syncNow,
+                  _activeAction == 'sync',
                 ),
                 _buildActionTile(
                   'logout',
                   'disconnect github account',
-                  _isSyncing ? null : _logout,
+                  _activeAction != null ? null : _logout,
                   false,
                   destructive: true,
                 ),
